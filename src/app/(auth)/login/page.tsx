@@ -57,7 +57,10 @@ export default function LoginPage() {
       router.push("/dashboard");
     } catch (error: any) {
       console.error(error);
-      let errorMessage = "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
+      let errorMessage = "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.";
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+        errorMessage = "البريد الإلكتروني أو كلمة المرور غير صحيحة. يرجى التحقق منها وإعادة المحاولة.";
+      }
       toast({
         variant: "destructive",
         title: "فشل تسجيل الدخول",

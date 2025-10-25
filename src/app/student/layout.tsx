@@ -3,38 +3,25 @@
 import type { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
-import {
-  SidebarProvider,
-  Sidebar,
-  SidebarHeader,
-  SidebarFooter,
-  SidebarContent,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarInset,
-  SidebarTrigger,
-} from '@/components/ui/sidebar';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookHeart, Home, User, LogOut, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Home, User, FileQuestion, Loader2 } from 'lucide-react';
 import { Header } from '@/components/layout/header';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 
 const navItems = [
   { href: '/student', label: 'لوحة التحكم', icon: Home },
+  { href: '/student/quizzes', label: 'الاختبارات', icon: FileQuestion },
   { href: '/student/profile', label: 'الملف الشخصي', icon: User },
 ];
 
 export default function StudentLayout({ children }: { children: ReactNode }) {
-  const { user, loading, logout } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   
-  const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
-
   if (loading) {
     return (
         <div className="flex h-screen items-center justify-center">
@@ -50,12 +37,32 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
 
   return (
     <>
-    <Header />
-    <div className="container mx-auto flex min-h-[calc(100vh-4rem)] p-4">
-        <main className="flex-1 overflow-y-auto">
+      <Header />
+      <div className="container mx-auto flex min-h-[calc(100vh-4rem)]">
+        <aside className="w-64 border-l p-4">
+          <nav className="flex flex-col gap-2">
+            {navItems.map((item) => (
+              <Button
+                key={item.href}
+                variant="ghost"
+                asChild
+                className={cn(
+                  'justify-start gap-2',
+                  pathname === item.href && 'bg-accent text-accent-foreground'
+                )}
+              >
+                <Link href={item.href}>
+                  <item.icon className="h-4 w-4" />
+                  {item.label}
+                </Link>
+              </Button>
+            ))}
+          </nav>
+        </aside>
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">
             {children}
         </main>
-    </div>
+      </div>
     </>
   );
 }

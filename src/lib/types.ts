@@ -19,6 +19,21 @@ export type Lecture = {
   year: LectureYear;
 };
 
+export type Question = {
+  text: string;
+  options: string[];
+  correctAnswer: string;
+};
+
+export type Quiz = {
+    id: string;
+    title: string;
+    lectureId: string;
+    lectureTitle?: string;
+    questions: Question[];
+    createdAt: Timestamp;
+};
+
 export type Student = {
     id: string;
     name: string;

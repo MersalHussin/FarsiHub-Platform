@@ -1,13 +1,90 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
+import Link from "next/link";
+import { format } from "date-fns";
+
+interface Submission {
+    id: string;
+    quizTitle: string;
+    score: number;
+    submittedAt: {
+        toDate: () => Date;
+    };
+    lectureId?: string;
+}
+
 export default function StudentQuizzesPage() {
+    const [submissions, setSubmissions] = useState<Submission[]>([]);
+    const [loading, setLoading] = useState(true);
+    const { user } = useAuth();
+    const { toast } = useToast();
+
+    const fetchSubmissions = useCallback(async () => {
+        if (!user) return;
+        setLoading(true);
+        try {
+            const q = query(
+                collection(db, "quizSubmissions"),
+                where("userId", "==", user.uid),
+                orderBy("submittedAt", "desc")
+            );
+            const querySnapshot = await getDocs(q);
+            const subs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Submission));
+            setSubmissions(subs);
+        } catch (error) {
+            console.error(error);
+            toast({
+                variant: "destructive",
+                title: "فشل تحميل نتائج الاختبارات",
+            });
+        } finally {
+            setLoading(false);
+        }
+    }, [user, toast]);
+
+    useEffect(() => {
+        fetchSubmissions();
+    }, [fetchSubmissions]);
+
     return (
         <div className="space-y-4">
-            <h1 className="text-3xl font-bold">الاختبارات</h1>
+            <h1 className="text-3xl font-bold">نتائج الاختبارات</h1>
             <p className="text-muted-foreground">
-                تصفح اختباراتك السابقة وابدأ اختبارات جديدة.
+                تصفح نتائج اختباراتك السابقة.
             </p>
-            <div className="text-center text-muted-foreground py-24 border rounded-lg">
-                <p>قائمة بجميع اختباراتك ستظهر هنا قريباً.</p>
-            </div>
+            {loading ? (
+                <div className="flex items-center justify-center h-64">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                </div>
+            ) : submissions.length > 0 ? (
+                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {submissions.map(sub => (
+                        <Card key={sub.id}>
+                            <CardHeader>
+                                <CardTitle>{sub.quizTitle}</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-2xl font-bold">{Math.round(sub.score)}%</p>
+                                <p className="text-sm text-muted-foreground">
+                                    تاريخ التقديم: {format(sub.submittedAt.toDate(), 'yyyy/MM/dd')}
+                                </p>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+            ) : (
+                <div className="text-center text-muted-foreground py-24 border rounded-lg">
+                    <p>لم تقم بتقديم أي اختبارات بعد.</p>
+                </div>
+            )}
         </div>
     );
 }

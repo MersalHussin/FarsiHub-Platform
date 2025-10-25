@@ -15,6 +15,8 @@ import { Loader2, ArrowRight } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import Confetti from 'react-dom-confetti';
+import { errorEmitter } from "@/lib/error-emitter";
+import { FirestorePermissionError } from "@/lib/errors";
 
 
 export default function TakeQuizPage() {
@@ -95,21 +97,30 @@ export default function TakeQuizPage() {
         setShowConfetti(true);
     }
 
-    try {
-        await addDoc(collection(db, "quizSubmissions"), {
-            quizId: quiz.id,
-            quizTitle: quiz.title,
-            userId: user.uid,
-            userName: user.name,
-            score: finalScore,
-            answers: finalAnswers,
-            submittedAt: serverTimestamp(),
+    const submissionData = {
+        quizId: quiz.id,
+        quizTitle: quiz.title,
+        userId: user.uid,
+        userName: user.name,
+        score: finalScore,
+        answers: finalAnswers,
+        submittedAt: serverTimestamp(),
+    };
+
+    addDoc(collection(db, "quizSubmissions"), submissionData)
+        .then(() => {
+            toast({ title: "تم تقديم الاختبار بنجاح!" });
+        })
+        .catch(async (error) => {
+            const permissionError = new FirestorePermissionError({
+                path: 'quizSubmissions',
+                operation: 'create',
+                requestResourceData: submissionData,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            console.error("Error submitting quiz: ", error);
+            toast({ variant: "destructive", title: "فشل تقديم الاختبار" });
         });
-        toast({ title: "تم تقديم الاختبار بنجاح!" });
-    } catch(error) {
-        console.error("Error submitting quiz: ", error);
-        toast({ variant: "destructive", title: "فشل تقديم الاختبار" });
-    }
   };
 
 

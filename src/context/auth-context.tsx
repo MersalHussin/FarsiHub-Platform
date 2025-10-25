@@ -6,6 +6,7 @@ import { doc, getDoc, Timestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import type { AppUser } from '@/lib/types';
 import { useRouter } from 'next/navigation';
+import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 interface AuthContextType {
   user: AppUser | null;
@@ -55,5 +56,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const value = { user, loading, logout };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+        <FirebaseErrorListener />
+        {children}
+    </AuthContext.Provider>
+  );
 };

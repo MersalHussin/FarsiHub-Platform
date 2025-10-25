@@ -35,6 +35,8 @@ import {
 import { Loader2, Trash2 } from "lucide-react";
 import AddQuizDialog from "./add-quiz-dialog";
 import Link from "next/link";
+import { errorEmitter } from "@/lib/error-emitter";
+import { FirestorePermissionError } from "@/lib/errors";
 
 export default function QuizzesPage() {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
@@ -67,21 +69,28 @@ export default function QuizzesPage() {
   }, [fetchQuizzes]);
   
   const handleDelete = async (quizId: string) => {
-    try {
-      await deleteDoc(doc(db, "quizzes", quizId));
-      toast({
-        title: "تم حذف الاختبار",
-        description: "تم حذف الاختبار بنجاح.",
-      });
-      fetchQuizzes();
-    } catch (error) {
+    const docRef = doc(db, "quizzes", quizId);
+    deleteDoc(docRef)
+      .then(() => {
+        toast({
+          title: "تم حذف الاختبار",
+          description: "تم حذف الاختبار بنجاح.",
+        });
+        fetchQuizzes();
+      })
+      .catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+            path: `quizzes/${quizId}`,
+            operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
         console.error("Error deleting quiz: ", error);
         toast({
             variant: "destructive",
             title: "فشل حذف الاختبار",
             description: "حدث خطأ أثناء حذف الاختبار.",
         });
-    }
+    });
   };
 
   return (

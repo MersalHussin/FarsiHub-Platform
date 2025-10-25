@@ -6,6 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { addDoc, collection, serverTimestamp, getDocs, query, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { errorEmitter } from "@/lib/error-emitter";
+import { FirestorePermissionError } from "@/lib/errors";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -98,29 +100,39 @@ export default function AddQuizDialog({ onQuizAdded }: AddQuizDialogProps) {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    try {
-      await addDoc(collection(db, "quizzes"), {
-        ...values,
-        lectureTitle: selectedLectureTitle,
-        createdAt: serverTimestamp(),
+    const quizData = {
+      ...values,
+      lectureTitle: selectedLectureTitle,
+      createdAt: serverTimestamp(),
+    };
+
+    addDoc(collection(db, "quizzes"), quizData)
+      .then(() => {
+        toast({
+          title: "تمت إضافة الاختبار",
+          description: "تمت إضافة الاختبار بنجاح.",
+        });
+        form.reset();
+        setIsOpen(false);
+        onQuizAdded();
+      })
+      .catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+            path: 'quizzes',
+            operation: 'create',
+            requestResourceData: quizData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        console.error("Error adding quiz: ", error);
+        toast({
+          variant: "destructive",
+          title: "فشل إضافة الاختبار",
+          description: "حدث خطأ أثناء إضافة الاختبار.",
+        });
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
-      toast({
-        title: "تمت إضافة الاختبار",
-        description: "تمت إضافة الاختبار بنجاح.",
-      });
-      form.reset();
-      setIsOpen(false);
-      onQuizAdded();
-    } catch (error) {
-      console.error("Error adding quiz: ", error);
-      toast({
-        variant: "destructive",
-        title: "فشل إضافة الاختبار",
-        description: "حدث خطأ أثناء إضافة الاختبار.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
   }
 
   return (

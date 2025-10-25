@@ -10,21 +10,25 @@ const features = [
     icon: <BookOpen className="w-12 h-12 text-primary" />,
     title: 'المحاضرات',
     description: 'وصول سهل ومنظم لجميع ملفات المحاضرات بصيغة PDF.',
+    href: '/lectures',
   },
   {
     icon: <FileQuestion className="w-12 h-12 text-primary" />,
     title: 'الاختبارات',
     description: 'اختبر فهمك بعد كل محاضرة من خلال اختبارات قصيرة.',
+    href: '#',
   },
     {
     icon: <ClipboardCheck className="w-12 h-12 text-primary" />,
     title: 'التكليفات',
     description: 'تابع التكليفات المطلوبة وقم بتسليمها في المواعيد المحددة.',
+    href: '/assignments',
   },
   {
     icon: <Sparkles className="w-12 h-12 text-primary" />,
     title: 'التطوير الذاتي',
     description: 'موارد إضافية وبرامج لتنمية مهاراتك اللغوية بشكل مستمر.',
+    href: '#',
   },
 ];
 
@@ -57,17 +61,19 @@ export default function Home() {
             <h2 className="text-3xl font-bold text-center mb-12 font-headline">مميزات المنصة</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
               {features.map((feature) => (
-                <Card key={feature.title} className="text-center transition-transform transform hover:-translate-y-2 hover:shadow-xl">
-                  <CardHeader>
-                    <div className="mx-auto bg-primary/10 rounded-full p-4 w-24 h-24 flex items-center justify-center mb-4">
-                      {feature.icon}
-                    </div>
-                    <CardTitle className="font-headline">{feature.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground">{feature.description}</p>
-                  </CardContent>
-                </Card>
+                <Link href={feature.href} key={feature.title} className="block">
+                  <Card className="text-center transition-transform transform hover:-translate-y-2 hover:shadow-xl h-full">
+                    <CardHeader>
+                      <div className="mx-auto bg-primary/10 rounded-full p-4 w-24 h-24 flex items-center justify-center mb-4">
+                        {feature.icon}
+                      </div>
+                      <CardTitle className="font-headline">{feature.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground">{feature.description}</p>
+                    </CardContent>
+                  </Card>
+                </Link>
               ))}
             </div>
           </div>

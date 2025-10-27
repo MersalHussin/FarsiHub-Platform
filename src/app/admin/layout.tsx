@@ -20,6 +20,8 @@ import { usePathname } from 'next/navigation';
 import { BookHeart, Users, BookCopy, FileQuestion, ClipboardCheck, LogOut, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+
 
 const navItems = [
   { href: '/admin/students', label: 'الطلاب', icon: Users },
@@ -75,21 +77,29 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               ))}
             </SidebarMenu>
           </SidebarContent>
-          <SidebarFooter className='border-t'>
-            <div className='flex items-center gap-3 p-3'>
-              <Avatar>
-                  <AvatarImage src={user.photoURL ?? ''} alt={user.name} />
-                  <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-              </Avatar>
-              <div className='flex flex-col'>
-                <span className="font-semibold text-sm text-foreground">{user.name}</span>
-                <span className="text-xs text-muted-foreground">{user.email}</span>
-              </div>
-            </div>
-            <Button onClick={logout} variant="ghost" className="w-full justify-start gap-2">
-                <LogOut />
-                تسجيل الخروج
-            </Button>
+          <SidebarFooter className='border-t p-2'>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="w-full justify-start h-auto px-2 py-1.5">
+                  <div className='flex items-center gap-3'>
+                    <Avatar className="h-9 w-9">
+                        <AvatarImage src={user.photoURL ?? ''} alt={user.name} />
+                        <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                    </Avatar>
+                    <div className='flex flex-col items-start'>
+                      <span className="font-semibold text-sm text-foreground">{user.name}</span>
+                      <span className="text-xs text-muted-foreground">{user.email}</span>
+                    </div>
+                  </div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56 mb-2" align="end" forceMount>
+                <DropdownMenuItem onClick={logout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    تسجيل الخروج
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </SidebarFooter>
         </Sidebar>
         <SidebarInset>

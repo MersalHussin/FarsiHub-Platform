@@ -5,11 +5,11 @@ import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
 
 interface Submission {
     id: string;
@@ -19,6 +19,7 @@ interface Submission {
         toDate: () => Date;
     };
     lectureId?: string;
+    quizId: string;
 }
 
 export default function StudentQuizzesPage() {
@@ -67,22 +68,30 @@ export default function StudentQuizzesPage() {
             ) : submissions.length > 0 ? (
                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {submissions.map(sub => (
-                        <Card key={sub.id}>
+                        <Card key={sub.id} className="flex flex-col">
                             <CardHeader>
                                 <CardTitle>{sub.quizTitle}</CardTitle>
+                                <CardDescription>
+                                    {format(sub.submittedAt.toDate(), 'PPP')}
+                                </CardDescription>
                             </CardHeader>
-                            <CardContent>
-                                <p className="text-2xl font-bold">{Math.round(sub.score)}%</p>
-                                <p className="text-sm text-muted-foreground">
-                                    تاريخ التقديم: {format(sub.submittedAt.toDate(), 'yyyy/MM/dd')}
-                                </p>
+                            <CardContent className="flex-grow">
+                                <p className="text-4xl font-bold">{Math.round(sub.score)}%</p>
                             </CardContent>
+                             <CardFooter>
+                                <Button variant="outline" size="sm" asChild>
+                                    <Link href={`/quizzes/${sub.quizId}`}>إعادة الاختبار</Link>
+                                </Button>
+                            </CardFooter>
                         </Card>
                     ))}
                 </div>
             ) : (
-                <div className="text-center text-muted-foreground py-24 border rounded-lg">
+                <div className="text-center text-muted-foreground py-24 border rounded-lg bg-card">
                     <p>لم تقم بتقديم أي اختبارات بعد.</p>
+                     <Button asChild className="mt-4">
+                        <Link href="/lectures">تصفح المحاضرات وابدأ</Link>
+                    </Button>
                 </div>
             )}
         </div>

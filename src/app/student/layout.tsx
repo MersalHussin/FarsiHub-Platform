@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/student', label: 'لوحة التحكم', icon: Home },
-  { href: '/student/quizzes', label: 'الاختبارات', icon: FileQuestion },
+  { href: '/student/quizzes', label: 'نتائج الاختبارات', icon: FileQuestion },
   { href: '/student/profile', label: 'الملف الشخصي', icon: User },
 ];
 
@@ -38,16 +38,16 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
   return (
     <>
       <Header />
-      <div className="container mx-auto flex min-h-[calc(100vh-4rem)]">
-        <aside className="w-64 border-l p-4">
-          <nav className="flex flex-col gap-2">
+      <div className="container mx-auto flex flex-col md:flex-row min-h-[calc(100vh-4rem)]">
+        <aside className="w-full md:w-64 border-b md:border-b-0 md:border-l p-4">
+          <nav className="flex flex-row md:flex-col gap-2">
             {navItems.map((item) => (
               <Button
                 key={item.href}
                 variant="ghost"
                 asChild
                 className={cn(
-                  'justify-start gap-2',
+                  'justify-start gap-2 flex-1 md:flex-none',
                   pathname === item.href && 'bg-accent text-accent-foreground'
                 )}
               >

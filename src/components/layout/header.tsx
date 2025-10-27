@@ -8,11 +8,15 @@ import { Menu, BookHeart, LayoutDashboard } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 
 export function Header() {
   const { user, loading, logout } = useAuth();
   const isMobile = useIsMobile();
   const pathname = usePathname();
+
+  const getInitials = (name: string) => name?.split(' ').map(n => n[0]).join('').toUpperCase() || '';
 
   const navItems = [
     { href: '/', label: 'الرئيسية' },
@@ -54,29 +58,67 @@ export function Header() {
     </>
   );
 
-  const AuthButtons = ({ isMobile = false }) => (
-    <div className={cn("flex items-center gap-2", isMobile && 'flex-col w-full mt-4 pt-4 border-t')}>
-      {loading ? null : user ? (
-        <>
-           <Button variant={isMobile ? 'outline' : 'ghost'} asChild className={cn(isMobile && 'w-full')}>
+  const AuthArea = ({ isMobile = false }) => {
+    if (loading) {
+      return null; // Or a loading spinner
+    }
+
+    if (user) {
+      return isMobile ? (
+        <div className="flex flex-col w-full mt-4 pt-4 border-t">
+           <Button variant='outline' asChild className='w-full'>
             <Link href="/dashboard">حسابي</Link>
           </Button>
-          <Button onClick={logout} variant={isMobile ? "default" : "secondary"} className={cn(isMobile && 'w-full')}>
+          <Button onClick={logout} variant="default" className='w-full'>
             تسجيل الخروج
           </Button>
-        </>
+        </div>
       ) : (
-        <>
-          <Button variant="ghost" asChild  className={cn(isMobile && 'w-full')}>
-            <Link href="/login">تسجيل الدخول</Link>
-          </Button>
-          <Button asChild  className={cn(isMobile && 'w-full')}>
-            <Link href="/signup">سجل الآن</Link>
-          </Button>
-        </>
-      )}
-    </div>
-  );
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                    <Avatar>
+                        <AvatarImage src={user.photoURL ?? ''} alt={user.name} />
+                        <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                    </Avatar>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{user.name}</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                            {user.email}
+                        </p>
+                    </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                    <Link href="/dashboard">
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        <span>لوحة التحكم</span>
+                    </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={logout}>
+                    تسجيل الخروج
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    }
+
+    return (
+      <div className={cn("flex items-center gap-2", isMobile && 'flex-col w-full mt-4 pt-4 border-t')}>
+        <Button variant="ghost" asChild  className={cn(isMobile && 'w-full')}>
+          <Link href="/login">تسجيل الدخول</Link>
+        </Button>
+        <Button asChild  className={cn(isMobile && 'w-full')}>
+          <Link href="/signup">سجل الآن</Link>
+        </Button>
+      </div>
+    );
+  }
 
 
   return (
@@ -99,7 +141,7 @@ export function Header() {
               <nav className="flex flex-col gap-2 mt-8">
                 <NavLinks isMobile={true}/>
               </nav>
-               <AuthButtons isMobile={true}/>
+               <AuthArea isMobile={true}/>
             </SheetContent>
           </Sheet>
         ) : (
@@ -107,7 +149,7 @@ export function Header() {
              <nav className="flex items-center gap-2">
               <NavLinks />
             </nav>
-            <AuthButtons />
+            <AuthArea />
           </div>
         )}
       </div>

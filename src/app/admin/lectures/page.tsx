@@ -51,9 +51,9 @@ export default function LecturesPage() {
       }
 
       // Fetch Lectures
+      const lecturesCollectionRef = collection(db, "subjects", subjectId, "lectures");
       const q = query(
-        collection(db, "lectures"),
-        where("subjectId", "==", subjectId),
+        lecturesCollectionRef,
         orderBy("createdAt", "desc")
       );
       const querySnapshot = await getDocs(q);
@@ -76,8 +76,10 @@ export default function LecturesPage() {
   }, [fetchLecturesAndSubject]);
 
   const handleDelete = async (lectureId: string) => {
+    if (!subjectId) return;
     try {
-      await deleteDoc(doc(db, "lectures", lectureId));
+      const lectureDocRef = doc(db, "subjects", subjectId, "lectures", lectureId);
+      await deleteDoc(lectureDocRef);
       toast({
         title: "تم حذف المحاضرة",
       });
@@ -138,7 +140,7 @@ export default function LecturesPage() {
               </CardContent>
               <CardFooter className="flex justify-between items-center">
                 <Button variant="outline" asChild>
-                  <Link href={`/lectures/${lecture.id}`} target="_blank" rel="noopener noreferrer">
+                  <Link href={`/lectures/${lecture.subjectId}/${lecture.id}`} target="_blank" rel="noopener noreferrer">
                     عرض
                   </Link>
                 </Button>

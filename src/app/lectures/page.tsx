@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { collection, getDocs, query, orderBy, where } from "firebase/firestore";
+import { collection, getDocs, query, orderBy, where, collectionGroup } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -55,7 +55,7 @@ export default function LecturesPage() {
 
       // Fetch all lectures for the user's year
       const lecturesQuery = query(
-        collection(db, "lectures"),
+        collectionGroup(db, "lectures"),
         where("year", "==", user.year),
         orderBy("createdAt", "desc")
       );
@@ -136,7 +136,7 @@ export default function LecturesPage() {
                                         </CardContent>
                                         <CardFooter>
                                             <Button asChild className="w-full">
-                                                <Link href={`/lectures/${lecture.id}`}>
+                                                <Link href={`/lectures/${lecture.subjectId}/${lecture.id}`}>
                                                 <BookOpen className="ml-2 h-4 w-4" />
                                                 عرض التفاصيل
                                                 </Link>
@@ -195,4 +195,3 @@ export default function LecturesPage() {
     </div>
   );
 }
-    

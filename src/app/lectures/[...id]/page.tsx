@@ -19,13 +19,14 @@ export default function LectureDetailsPage() {
   const { toast } = useToast();
   const router = useRouter();
   const params = useParams();
-  const { id } = params;
+  const idParams = params.id || [];
+  const [subjectId, lectureId] = idParams;
 
   const fetchLecture = useCallback(async () => {
-    if (typeof id !== 'string') return;
+    if (typeof subjectId !== 'string' || typeof lectureId !== 'string') return;
     setLoading(true);
     try {
-      const lectureRef = doc(db, "lectures", id);
+      const lectureRef = doc(db, "subjects", subjectId, "lectures", lectureId);
       const lectureSnap = await getDoc(lectureRef);
 
       if (lectureSnap.exists()) {
@@ -40,7 +41,7 @@ export default function LectureDetailsPage() {
     } finally {
       setLoading(false);
     }
-  }, [id, toast, router]);
+  }, [subjectId, lectureId, toast, router]);
 
   useEffect(() => {
     fetchLecture();
@@ -70,9 +71,9 @@ export default function LectureDetailsPage() {
     return (
         <div className="space-y-6">
             <div>
-              <Button variant="ghost" onClick={() => router.push('/lectures')} className="mb-4">
+              <Button variant="ghost" onClick={() => router.back()} className="mb-4">
                   <ArrowRight className="ml-2 h-4 w-4" />
-                  العودة للمحاضرات
+                  عودة
               </Button>
               <h1 className="text-3xl font-bold">{lecture.title}</h1>
               <p className="text-lg text-muted-foreground mt-2">{lecture.description}</p>
@@ -91,7 +92,7 @@ export default function LectureDetailsPage() {
               <div className="text-center">
                 {lecture.quiz ? (
                   <Button size="lg" asChild>
-                    <Link href={`/quizzes/${lecture.id}`}>
+                    <Link href={`/quizzes/${lecture.subjectId}/${lecture.id}`}>
                       <FileQuestion className="ml-2 h-5 w-5" />
                       بدء اختبار: {lecture.quiz.title}
                     </Link>

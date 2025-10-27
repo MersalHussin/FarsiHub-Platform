@@ -33,6 +33,7 @@
       "description": "A lecture for a subject.",
       "type": "object",
       "properties": {
+        "id": { "type": "string" },
         "title": { "type": "string" },
         "description": { "type": "string" },
         "pdfUrl": { "type": "string", "format": "uri" },
@@ -43,7 +44,7 @@
         "createdAt": { "type": "string", "format": "date-time" },
         "quiz": { "$ref": "#/entities/quiz" }
       },
-      "required": ["title", "description", "pdfUrl", "subjectId", "subjectName", "year", "semester", "createdAt"]
+      "required": ["id", "title", "description", "pdfUrl", "subjectId", "subjectName", "year", "semester", "createdAt"]
     },
     "quiz": {
       "title": "Quiz",
@@ -77,13 +78,14 @@
         "quizId": { "type": "string" },
         "quizTitle": { "type": "string" },
         "lectureId": { "type": "string" },
+        "subjectId": { "type": "string" },
         "userId": { "type": "string" },
         "userName": { "type": "string" },
         "score": { "type": "number" },
         "answers": { "type": "object" },
         "submittedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["quizId", "quizTitle", "lectureId", "userId", "score", "submittedAt"]
+      "required": ["quizId", "quizTitle", "lectureId", "subjectId", "userId", "score", "submittedAt"]
     }
   },
   "auth": {
@@ -98,9 +100,9 @@
       "schema": { "$ref": "#/entities/subject" },
       "description": "Course subjects."
     },
-    "/lectures/{lectureId}": {
+    "/subjects/{subjectId}/lectures/{lectureId}": {
       "schema": { "$ref": "#/entities/lecture" },
-      "description": "Lectures for subjects."
+      "description": "Lectures for a specific subject."
     },
     "/quizSubmissions/{submissionId}": {
       "schema": { "$ref": "#/entities/quizSubmission" },

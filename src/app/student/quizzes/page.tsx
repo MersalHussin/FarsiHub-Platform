@@ -18,8 +18,8 @@ interface Submission {
     submittedAt: {
         toDate: () => Date;
     };
-    lectureId: string; // Ensure this exists
-    quizId: string; // This is the lectureId now
+    lectureId: string;
+    subjectId: string;
 }
 
 export default function StudentQuizzesPage() {
@@ -80,10 +80,10 @@ export default function StudentQuizzesPage() {
                             </CardContent>
                              <CardFooter className="flex justify-between">
                                 <Button variant="outline" size="sm" asChild>
-                                    <Link href={`/quizzes/${sub.lectureId}`}>إعادة الاختبار</Link>
+                                    <Link href={`/quizzes/${sub.subjectId}/${sub.lectureId}`}>إعادة الاختبار</Link>
                                 </Button>
                                 <Button variant="secondary" size="sm" asChild>
-                                    <Link href={`/lectures/${sub.lectureId}`}>عرض المحاضرة</Link>
+                                    <Link href={`/lectures/${sub.subjectId}/${sub.lectureId}`}>عرض المحاضرة</Link>
                                 </Button>
                             </CardFooter>
                         </Card>

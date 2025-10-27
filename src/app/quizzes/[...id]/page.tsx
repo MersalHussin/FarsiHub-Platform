@@ -6,7 +6,7 @@ import { db } from "@/lib/firebase";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import type { Lecture, Question, Quiz } from "@/lib/types";
+import type { Lecture, Quiz } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -34,13 +34,14 @@ export default function TakeQuizPage() {
   const router = useRouter();
   const params = useParams();
   const { user } = useAuth();
-  const { id } = params; // This is now lecture ID
+  const idParams = params.id || [];
+  const [subjectId, lectureId] = idParams;
 
   const fetchLectureWithQuiz = useCallback(async () => {
-    if (typeof id !== 'string') return;
+    if (typeof subjectId !== 'string' || typeof lectureId !== 'string') return;
     setLoading(true);
     try {
-      const docRef = doc(db, "lectures", id);
+      const docRef = doc(db, "subjects", subjectId, "lectures", lectureId);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
@@ -50,7 +51,7 @@ export default function TakeQuizPage() {
           setQuiz(lectureData.quiz);
         } else {
           toast({ variant: "destructive", title: "الاختبار غير موجود لهذه المحاضرة" });
-          router.push(`/lectures/${id}`);
+          router.push(`/lectures/${subjectId}/${lectureId}`);
         }
       } else {
         toast({ variant: "destructive", title: "المحاضرة غير موجودة" });
@@ -62,7 +63,7 @@ export default function TakeQuizPage() {
     } finally {
       setLoading(false);
     }
-  }, [id, toast, router]);
+  }, [subjectId, lectureId, toast, router]);
 
   useEffect(() => {
     fetchLectureWithQuiz();
@@ -90,7 +91,7 @@ export default function TakeQuizPage() {
   };
   
   const finishQuiz = async (finalAnswers: Record<number, string>) => {
-    if(!quiz || !user || !lecture) return;
+    if(!quiz || !user || !lecture || !subjectId || !lectureId) return;
     let correctCount = 0;
     quiz.questions.forEach((question, index) => {
         if(finalAnswers[index] === question.correctAnswer) {
@@ -106,9 +107,10 @@ export default function TakeQuizPage() {
     }
 
     const submissionData = {
-        quizId: lecture.id, // Using lectureId as the unique ID for the quiz context
+        quizId: lectureId,
         quizTitle: quiz.title,
-        lectureId: lecture.id,
+        lectureId: lectureId,
+        subjectId: subjectId,
         userId: user.uid,
         userName: user.name,
         score: finalScore,
@@ -176,7 +178,7 @@ export default function TakeQuizPage() {
                     </p>
                 </CardContent>
                 <CardFooter className="flex justify-center">
-                    <Button onClick={() => router.push(`/lectures/${lecture.id}`)}>
+                    <Button onClick={() => router.push(`/lectures/${lecture.subjectId}/${lecture.id}`)}>
                         <ArrowRight className="ml-2 h-4 w-4" />
                         العودة إلى المحاضرة
                     </Button>

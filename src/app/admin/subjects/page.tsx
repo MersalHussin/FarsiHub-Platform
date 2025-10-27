@@ -51,17 +51,16 @@ export default function SubjectsPage() {
       const subjectsList: Subject[] = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Subject));
       setSubjects(subjectsList);
     } catch (error) {
-        console.error("Error fetching subjects: ", error);
-        // This will now throw a contextual error for debugging security rules
-        const permissionError = new FirestorePermissionError({
-          path: 'subjects',
-          operation: 'list',
-        });
-        errorEmitter.emit('permission-error', permissionError);
+      console.error("Error fetching subjects: ", error);
+      toast({
+        variant: "destructive",
+        title: "فشل تحميل المواد الدراسية",
+        description: "ليست لديك الصلاحية لعرض المواد. يرجى مراجعة قواعد الأمان في Firebase.",
+      });
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     fetchSubjects();
@@ -76,11 +75,6 @@ export default function SubjectsPage() {
       })
       .catch((error) => {
         console.error("Error deleting subject: ", error);
-        const permissionError = new FirestorePermissionError({
-          path: subjectDocRef.path,
-          operation: 'delete',
-        });
-        errorEmitter.emit('permission-error', permissionError);
         toast({ variant: "destructive", title: "فشل حذف المادة" });
       });
   };

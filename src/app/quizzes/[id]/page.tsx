@@ -118,8 +118,11 @@ export default function TakeQuizPage() {
                 requestResourceData: submissionData,
             });
             errorEmitter.emit('permission-error', permissionError);
-            console.error("Error submitting quiz: ", error);
-            toast({ variant: "destructive", title: "فشل تقديم الاختبار" });
+            toast({ 
+                variant: "destructive", 
+                title: "فشل تقديم الاختبار",
+                description: "ليس لديك الصلاحية لتقديم هذا الاختبار."
+            });
         });
   };
 

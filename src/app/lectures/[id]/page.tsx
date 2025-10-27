@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useParams, useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import type { Lecture, Quiz } from "@/lib/types";
+import type { Lecture } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Loader2, ArrowRight, FileQuestion } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
@@ -15,33 +15,21 @@ import Link from "next/link";
 
 export default function LectureDetailsPage() {
   const [lecture, setLecture] = useState<Lecture | null>(null);
-  const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const router = useRouter();
   const params = useParams();
   const { id } = params;
 
-  const fetchLectureAndQuiz = useCallback(async () => {
+  const fetchLecture = useCallback(async () => {
     if (typeof id !== 'string') return;
     setLoading(true);
     try {
-      // Fetch Lecture
       const lectureRef = doc(db, "lectures", id);
       const lectureSnap = await getDoc(lectureRef);
 
       if (lectureSnap.exists()) {
         setLecture({ id: lectureSnap.id, ...lectureSnap.data() } as Lecture);
-
-        // Fetch associated quiz
-        const q = query(collection(db, "quizzes"), where("lectureId", "==", id));
-        const quizSnapshot = await getDocs(q);
-        if (!quizSnapshot.empty) {
-            const quizDoc = quizSnapshot.docs[0];
-            setQuiz({ id: quizDoc.id, ...quizDoc.data() } as Quiz);
-        } else {
-            setQuiz(null);
-        }
       } else {
         toast({ variant: "destructive", title: "المحاضرة غير موجودة" });
         router.push('/lectures');
@@ -55,8 +43,8 @@ export default function LectureDetailsPage() {
   }, [id, toast, router]);
 
   useEffect(() => {
-    fetchLectureAndQuiz();
-  }, [fetchLectureAndQuiz]);
+    fetchLecture();
+  }, [fetchLecture]);
 
   const pageContent = () => {
     if (loading) {
@@ -101,11 +89,11 @@ export default function LectureDetailsPage() {
               </div>
               
               <div className="text-center">
-                {quiz ? (
+                {lecture.quiz ? (
                   <Button size="lg" asChild>
-                    <Link href={`/quizzes/${quiz.id}`}>
+                    <Link href={`/quizzes/${lecture.id}`}>
                       <FileQuestion className="ml-2 h-5 w-5" />
-                      بدء الاختبار
+                      بدء اختبار: {lecture.quiz.title}
                     </Link>
                   </Button>
                 ) : (

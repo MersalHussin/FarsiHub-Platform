@@ -6,7 +6,7 @@ import { db } from "@/lib/firebase";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import type { Quiz, Question } from "@/lib/types";
+import type { Lecture, Question, Quiz } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -20,6 +20,7 @@ import { FirestorePermissionError } from "@/lib/errors";
 
 
 export default function TakeQuizPage() {
+  const [lecture, setLecture] = useState<Lecture | null>(null);
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -33,23 +34,30 @@ export default function TakeQuizPage() {
   const router = useRouter();
   const params = useParams();
   const { user } = useAuth();
-  const { id } = params;
+  const { id } = params; // This is now lecture ID
 
-  const fetchQuiz = useCallback(async () => {
+  const fetchLectureWithQuiz = useCallback(async () => {
     if (typeof id !== 'string') return;
     setLoading(true);
     try {
-      const docRef = doc(db, "quizzes", id);
+      const docRef = doc(db, "lectures", id);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
-        setQuiz({ id: docSnap.id, ...docSnap.data() } as Quiz);
+        const lectureData = { id: docSnap.id, ...docSnap.data() } as Lecture;
+        setLecture(lectureData);
+        if (lectureData.quiz) {
+          setQuiz(lectureData.quiz);
+        } else {
+          toast({ variant: "destructive", title: "الاختبار غير موجود لهذه المحاضرة" });
+          router.push(`/lectures/${id}`);
+        }
       } else {
-        toast({ variant: "destructive", title: "الاختبار غير موجود" });
+        toast({ variant: "destructive", title: "المحاضرة غير موجودة" });
         router.push('/lectures');
       }
     } catch (error) {
-      console.error("Error fetching quiz: ", error);
+      console.error("Error fetching lecture/quiz: ", error);
       toast({ variant: "destructive", title: "فشل تحميل الاختبار" });
     } finally {
       setLoading(false);
@@ -57,8 +65,8 @@ export default function TakeQuizPage() {
   }, [id, toast, router]);
 
   useEffect(() => {
-    fetchQuiz();
-  }, [fetchQuiz]);
+    fetchLectureWithQuiz();
+  }, [fetchLectureWithQuiz]);
 
   const handleNextQuestion = () => {
     if (selectedAnswer === null) {
@@ -82,7 +90,7 @@ export default function TakeQuizPage() {
   };
   
   const finishQuiz = async (finalAnswers: Record<number, string>) => {
-    if(!quiz || !user) return;
+    if(!quiz || !user || !lecture) return;
     let correctCount = 0;
     quiz.questions.forEach((question, index) => {
         if(finalAnswers[index] === question.correctAnswer) {
@@ -98,8 +106,9 @@ export default function TakeQuizPage() {
     }
 
     const submissionData = {
-        quizId: quiz.id,
+        quizId: lecture.id, // Using lectureId as the unique ID for the quiz context
         quizTitle: quiz.title,
+        lectureId: lecture.id,
         userId: user.uid,
         userName: user.name,
         score: finalScore,
@@ -136,7 +145,7 @@ export default function TakeQuizPage() {
       );
     }
 
-    if (!quiz) {
+    if (!quiz || !lecture) {
       return <p className="text-center">لم يتم العثور على الاختبار.</p>;
     }
 
@@ -167,7 +176,7 @@ export default function TakeQuizPage() {
                     </p>
                 </CardContent>
                 <CardFooter className="flex justify-center">
-                    <Button onClick={() => router.push(`/lectures/${quiz.lectureId}`)}>
+                    <Button onClick={() => router.push(`/lectures/${lecture.id}`)}>
                         <ArrowRight className="ml-2 h-4 w-4" />
                         العودة إلى المحاضرة
                     </Button>

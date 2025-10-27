@@ -11,15 +11,6 @@ export interface AppUser extends FirebaseUser {
 
 export type LectureYear = "first" | "second" | "third" | "fourth";
 
-export type Lecture = {
-  id: string;
-  title: string;
-  description: string;
-  pdfUrl: string;
-  createdAt: Timestamp;
-  year: LectureYear;
-};
-
 export type Question = {
   text: string;
   options: string[];
@@ -27,12 +18,18 @@ export type Question = {
 };
 
 export type Quiz = {
-    id: string;
     title: string;
-    lectureId: string;
-    lectureTitle?: string;
     questions: Question[];
-    createdAt: Timestamp;
+};
+
+export type Lecture = {
+  id: string;
+  title: string;
+  description: string;
+  pdfUrl: string;
+  createdAt: Timestamp;
+  year: LectureYear;
+  quiz?: Quiz;
 };
 
 export type Student = {

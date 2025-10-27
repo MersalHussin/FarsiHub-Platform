@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookHeart, Users, BookCopy, FileQuestion, ClipboardCheck, LogOut, Loader2 } from 'lucide-react';
+import { BookHeart, Users, BookCopy, ClipboardCheck, LogOut, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -25,8 +25,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 
 const navItems = [
   { href: '/admin/students', label: 'الطلاب', icon: Users },
-  { href: '/admin/lectures', label: 'المحاضرات', icon: BookCopy },
-  { href: '/admin/quizzes', label: 'الاختبارات', icon: FileQuestion },
+  { href: '/admin/lectures', label: 'المحاضرات والاختبارات', icon: BookCopy },
   { href: '/admin/assignments', label: 'التكليفات', icon: ClipboardCheck },
 ];
 

@@ -69,6 +69,7 @@ export default function SignUpPage() {
         approved: false,
         createdAt: serverTimestamp(),
         uid: user.uid,
+        year: null,
       });
 
       toast({

@@ -6,6 +6,7 @@ export interface AppUser extends FirebaseUser {
   role: 'student' | 'admin';
   approved: boolean;
   createdAt: Timestamp;
+  year?: LectureYear;
 }
 
 export type LectureYear = "first" | "second" | "third" | "fourth";
@@ -41,4 +42,5 @@ export type Student = {
     role: 'student' | 'admin';
     approved: boolean;
     createdAt: Date;
+    year?: LectureYear;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, getDoc, Timestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
@@ -12,6 +12,7 @@ interface AuthContextType {
   user: AppUser | null;
   loading: boolean;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,40 +22,51 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: User | null) => {
-      if (firebaseUser) {
-        const userDocRef = doc(db, 'users', firebaseUser.uid);
-        const userDoc = await getDoc(userDocRef);
+  const fetchUserData = useCallback(async (firebaseUser: User | null) => {
+    if (firebaseUser) {
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      const userDoc = await getDoc(userDocRef);
 
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          setUser({
-            ...firebaseUser,
-            name: userData.name,
-            role: userData.role,
-            approved: userData.approved,
-            createdAt: userData.createdAt,
-          } as AppUser);
-        } else {
-          // User exists in Auth but not Firestore, handle this case
-          setUser(null);
-        }
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        setUser({
+          ...firebaseUser,
+          name: userData.name,
+          role: userData.role,
+          approved: userData.approved,
+          createdAt: userData.createdAt,
+          year: userData.year,
+        } as AppUser);
       } else {
         setUser(null);
       }
-      setLoading(false);
+    } else {
+      setUser(null);
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: User | null) => {
+      fetchUserData(firebaseUser);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [fetchUserData]);
   
   const logout = async () => {
     await auth.signOut();
+    setUser(null);
     router.push('/login');
   };
 
-  const value = { user, loading, logout };
+  const refreshUser = useCallback(async () => {
+    setLoading(true);
+    await fetchUserData(auth.currentUser);
+    setLoading(false);
+  },[fetchUserData]);
+
+  const value = { user, loading, logout, refreshUser };
 
   return (
     <AuthContext.Provider value={value}>

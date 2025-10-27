@@ -39,8 +39,14 @@ export default function DashboardPage() {
     if (!loading && user) {
       if (user.role === 'admin') {
         router.replace('/admin');
-      } else if (user.role === 'student' && user.approved) {
-        router.replace('/student');
+      } else if (user.role === 'student') {
+        if (!user.approved) {
+            // Stay on this page, PendingApproval will be shown
+        } else if (!user.year) {
+            router.replace('/student/onboarding');
+        } else {
+            router.replace('/student');
+        }
       }
     }
   }, [user, loading, router]);

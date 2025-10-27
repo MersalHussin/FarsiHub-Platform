@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import type { Lecture, LectureYear } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ export default function LecturesPage() {
   const [lectures, setLectures] = useState<Lecture[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const fetchLectures = useCallback(async () => {
     setLoading(true);
@@ -53,7 +55,11 @@ export default function LecturesPage() {
   }, [fetchLectures]);
 
   const groupedLectures = useMemo(() => {
-    return lectures.reduce((acc, lecture) => {
+    const filteredLectures = user?.year 
+      ? lectures.filter(lecture => lecture.year === user.year) 
+      : lectures;
+
+    return filteredLectures.reduce((acc, lecture) => {
       const { year } = lecture;
       if (!acc[year]) {
         acc[year] = [];
@@ -61,7 +67,7 @@ export default function LecturesPage() {
       acc[year].push(lecture);
       return acc;
     }, {} as Record<LectureYear, Lecture[]>);
-  }, [lectures]);
+  }, [lectures, user]);
 
 
   const renderContent = () => {
@@ -78,9 +84,41 @@ export default function LecturesPage() {
     if (yearsWithLectures.length === 0) {
         return (
             <div className="text-center text-muted-foreground py-12 border rounded-lg">
-                <p>لا توجد محاضرات متاحة حالياً.</p>
+                <p>
+                  {user?.year ? "لا توجد محاضرات متاحة لفرقتك الدراسية حالياً." : "لا توجد محاضرات متاحة حالياً."}
+                </p>
+                {!user && (
+                    <Button asChild className="mt-4">
+                        <Link href="/login">سجل الدخول لعرض محاضراتك</Link>
+                    </Button>
+                )}
             </div>
         );
+    }
+
+    if(user?.year) {
+        return (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {groupedLectures[user.year]?.map((lecture) => (
+                    <Card key={lecture.id} className="flex flex-col">
+                        <CardHeader>
+                            <CardTitle>{lecture.title}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex-grow">
+                            <p className="text-muted-foreground line-clamp-3 h-14">{lecture.description}</p>
+                        </CardContent>
+                        <CardFooter>
+                            <Button asChild className="w-full">
+                                <Link href={`/lectures/${lecture.id}`}>
+                                <BookOpen className="ml-2 h-4 w-4" />
+                                عرض التفاصيل
+                                </Link>
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                ))}
+            </div>
+        )
     }
 
     return (
@@ -126,8 +164,12 @@ export default function LecturesPage() {
         <main className="flex-grow container mx-auto py-10 px-4">
             <div className="space-y-6">
                 <div>
-                  <h2 className="text-3xl font-bold">المحاضرات</h2>
-                  <p className="text-muted-foreground">تصفح جميع المحاضرات المتاحة لكل فرقة دراسية.</p>
+                  <h2 className="text-3xl font-bold">
+                    {user?.year ? `محاضرات ${yearMap[user.year]}` : "المحاضرات"}
+                  </h2>
+                  <p className="text-muted-foreground">
+                    {user?.year ? "تصفح جميع المحاضرات المتاحة لك." : "تصفح جميع المحاضرات المتاحة لكل فرقة دراسية."}
+                  </p>
                 </div>
                 {renderContent()}
             </div>

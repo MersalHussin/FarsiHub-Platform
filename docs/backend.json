@@ -112,8 +112,14 @@
   "securityRules": {
     "rules": {
       "{document=**}": {
-        ".read": "true",
-        ".write": "true"
+        ".read": "isSignedIn()",
+        ".write": "isAdmin()"
+      },
+      "/users/{userId}": {
+        ".write": "isAdmin() || isOwner(userId)"
+      },
+      "/quizSubmissions/{submissionId}": {
+        ".write": "isSignedIn()"
       }
     }
   }

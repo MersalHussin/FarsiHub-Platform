@@ -128,7 +128,7 @@
         ".write": "isAdmin()"
       },
       "quizSubmissions": {
-        ".read": "isAdmin() || isOwner(resource.data.userId)",
+        ".read": "isAdmin() || (isOwner(resource.data.userId) && resource.data.userId == request.auth.uid)",
         ".create": "isOwner(request.resource.data.userId)"
       }
     }

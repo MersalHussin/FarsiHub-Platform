@@ -17,6 +17,8 @@ import type { Student } from "@/lib/types";
 import { format } from 'date-fns';
 import { Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { errorEmitter } from "@/lib/error-emitter";
+import { FirestorePermissionError } from "@/lib/errors";
 
 export default function StudentsPage() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -56,25 +58,38 @@ export default function StudentsPage() {
 
   const handleApprovalChange = async (studentId: string, approved: boolean) => {
     const studentRef = doc(db, "users", studentId);
-    try {
-      await updateDoc(studentRef, { approved });
-      setStudents((prevStudents) =>
-        prevStudents.map((student) =>
-          student.id === studentId ? { ...student, approved } : student
-        )
-      );
-      toast({
-        title: "تم تحديث الحالة",
-        description: `تم ${approved ? 'قبول' : 'تعليق'} الطالب بنجاح.`,
-      });
-    } catch (error) {
-      console.error("Error updating student approval: ", error);
-      toast({
-        variant: "destructive",
-        title: "فشل تحديث الحالة",
-        description: "حدث خطأ أثناء تحديث حالة الطالب.",
-      });
-    }
+    const updateData = { approved };
+    updateDoc(studentRef, updateData)
+      .then(() => {
+        setStudents((prevStudents) =>
+          prevStudents.map((student) =>
+            student.id === studentId ? { ...student, approved } : student
+          )
+        );
+        toast({
+          title: "تم تحديث الحالة",
+          description: `تم ${approved ? 'قبول' : 'تعليق'} الطالب بنجاح.`,
+        });
+      })
+      .catch((error) => {
+        const permissionError = new FirestorePermissionError({
+            path: studentRef.path,
+            operation: 'update',
+            requestResourceData: updateData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        toast({
+          variant: "destructive",
+          title: "فشل تحديث الحالة",
+          description: "ليست لديك الصلاحية لتحديث حالة هذا الطالب.",
+        });
+        // Revert UI change on error
+        setStudents((prevStudents) =>
+            prevStudents.map((student) =>
+            student.id === studentId ? { ...student, approved: !approved } : student
+            )
+        );
+    });
   };
 
   if (loading) {

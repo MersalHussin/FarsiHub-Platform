@@ -1,0 +1,132 @@
+{
+  "entities": {
+    "user": {
+      "title": "User",
+      "description": "A user of the application.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["student", "admin"] },
+        "approved": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "year": { "type": "string", "enum": ["first", "second", "third", "fourth"] }
+      },
+      "required": ["uid", "name", "email", "role", "approved", "createdAt"]
+    },
+    "subject": {
+      "title": "Subject",
+      "description": "A course subject.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "year": { "type": "string", "enum": ["first", "second", "third", "fourth"] },
+        "semester": { "type": "string", "enum": ["first", "second"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "year", "semester", "createdAt"]
+    },
+    "lecture": {
+      "title": "Lecture",
+      "description": "A lecture for a subject.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "pdfUrl": { "type": "string", "format": "uri" },
+        "subjectId": { "type": "string" },
+        "subjectName": { "type": "string" },
+        "year": { "type": "string", "enum": ["first", "second", "third", "fourth"] },
+        "semester": { "type": "string", "enum": ["first", "second"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "quiz": { "$ref": "#/entities/quiz" }
+      },
+      "required": ["title", "description", "pdfUrl", "subjectId", "subjectName", "year", "semester", "createdAt"]
+    },
+    "quiz": {
+      "title": "Quiz",
+      "description": "A quiz associated with a lecture.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "questions": {
+          "type": "array",
+          "items": { "$ref": "#/entities/question" }
+        }
+      },
+      "required": ["title", "questions"]
+    },
+    "question": {
+        "title": "Question",
+        "description": "A single question in a quiz.",
+        "type": "object",
+        "properties": {
+            "text": { "type": "string" },
+            "options": { "type": "array", "items": { "type": "string" } },
+            "correctAnswer": { "type": "string" }
+        },
+        "required": ["text", "options", "correctAnswer"]
+    },
+    "quizSubmission": {
+      "title": "Quiz Submission",
+      "description": "A student's submission for a quiz.",
+      "type": "object",
+      "properties": {
+        "quizId": { "type": "string" },
+        "quizTitle": { "type": "string" },
+        "lectureId": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "score": { "type": "number" },
+        "answers": { "type": "object" },
+        "submittedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["quizId", "quizTitle", "lectureId", "userId", "score", "submittedAt"]
+    }
+  },
+  "auth": {
+    "providers": ["email"]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/user" },
+      "description": "User profile data. Only admins or the user themselves can access this data.",
+      "rules": {
+        "read": "isAdmin() || isOwner(userId)",
+        "write": "isAdmin() || isOwner(userId)"
+      }
+    },
+    "/subjects/{subjectId}": {
+      "schema": { "$ref": "#/entities/subject" },
+      "description": "Course subjects. Admins can manage them, students can read them.",
+      "rules": {
+        "read": "isSignedIn()",
+        "write": "isAdmin()"
+      }
+    },
+    "/lectures/{lectureId}": {
+      "schema": { "$ref": "#/entities/lecture" },
+      "description": "Lectures for subjects. Admins can manage them, students can read them.",
+      "rules": {
+        "read": "isSignedIn()",
+        "write": "isAdmin()"
+      }
+    },
+    "/quizSubmissions/{submissionId}": {
+      "schema": { "$ref": "#/entities/quizSubmission" },
+      "description": "Student quiz submissions. Students can create their own, and read their own. Admins can read all.",
+      "rules": {
+        "read": "isAdmin() || isOwner(resource.data.userId)",
+        "create": "isOwner(request.resource.data.userId)"
+      }
+    }
+  },
+  "securityRules": {
+    "functions": [
+      "function isSignedIn() { return request.auth != null; }",
+      "function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }",
+      "function isAdmin() { return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'; }"
+    ]
+  }
+}

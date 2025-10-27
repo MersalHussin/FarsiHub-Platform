@@ -29,19 +29,13 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, PlusCircle, Trash2 } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import type { Subject } from "@/lib/types";
 
 const questionSchema = z.object({
   text: z.string().min(5, "يجب أن يكون السؤال 5 أحرف على الأقل."),
@@ -53,13 +47,6 @@ const formSchema = z.object({
   title: z.string().min(3, { message: "يجب أن يتكون العنوان من 3 أحرف على الأقل." }),
   description: z.string().min(10, { message: "يجب أن يتكون الوصف من 10 أحرف على الأقل." }),
   pdfUrl: z.string().url({ message: "الرجاء إدخال رابط صالح." }),
-  subject: z.string().min(2, { message: "يجب إدخال اسم المادة." }),
-  semester: z.enum(["first", "second"], {
-    required_error: "الرجاء تحديد الفصل الدراسي.",
-  }),
-  year: z.enum(["first", "second", "third", "fourth"], {
-    required_error: "الرجاء تحديد الفرقة الدراسية.",
-  }),
   hasQuiz: z.boolean().default(false),
   quiz: z.object({
       title: z.string(),
@@ -78,9 +65,10 @@ const formSchema = z.object({
 
 type AddLectureDialogProps = {
   onLectureAdded: () => void;
+  subject: Subject;
 };
 
-export default function AddLectureDialog({ onLectureAdded }: AddLectureDialogProps) {
+export default function AddLectureDialog({ onLectureAdded, subject }: AddLectureDialogProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -91,7 +79,6 @@ export default function AddLectureDialog({ onLectureAdded }: AddLectureDialogPro
       title: "",
       description: "",
       pdfUrl: "",
-      subject: "",
       hasQuiz: false,
       quiz: {
         title: "",
@@ -114,9 +101,10 @@ export default function AddLectureDialog({ onLectureAdded }: AddLectureDialogPro
         title: values.title,
         description: values.description,
         pdfUrl: values.pdfUrl,
-        year: values.year,
-        subject: values.subject,
-        semester: values.semester,
+        subjectId: subject.id,
+        subjectName: subject.name,
+        year: subject.year,
+        semester: subject.semester,
         createdAt: serverTimestamp(),
       };
 
@@ -155,7 +143,7 @@ export default function AddLectureDialog({ onLectureAdded }: AddLectureDialogPro
       </DialogTrigger>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>إضافة محاضرة جديدة</DialogTitle>
+          <DialogTitle>إضافة محاضرة جديدة لمادة: {subject.name}</DialogTitle>
           <DialogDescription>
             أدخل تفاصيل المحاضرة وأضف اختباراً إذا رغبت.
           </DialogDescription>
@@ -190,65 +178,7 @@ export default function AddLectureDialog({ onLectureAdded }: AddLectureDialogPro
                         </FormItem>
                     )}
                     />
-                    <FormField
-                    control={form.control}
-                    name="subject"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>اسم المادة</FormLabel>
-                        <FormControl>
-                            <Input {...field} placeholder="مثال: نصوص فارسية" />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                    <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                            control={form.control}
-                            name="year"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>الفرقة الدراسية</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="اختر الفرقة" />
-                                    </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                    <SelectItem value="first">الفرقة الأولى</SelectItem>
-                                    <SelectItem value="second">الفرقة الثانية</SelectItem>
-                                    <SelectItem value="third">الفرقة الثالثة</SelectItem>
-                                    <SelectItem value="fourth">الفرقة الرابعة</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="semester"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>الفصل الدراسي</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="اختر الفصل" />
-                                    </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                    <SelectItem value="first">الفصل الأول</SelectItem>
-                                    <SelectItem value="second">الفصل الثاني</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </div>
+                    
                     <FormField
                     control={form.control}
                     name="pdfUrl"
@@ -404,5 +334,3 @@ export default function AddLectureDialog({ onLectureAdded }: AddLectureDialogPro
     </Dialog>
   );
 }
-
-    

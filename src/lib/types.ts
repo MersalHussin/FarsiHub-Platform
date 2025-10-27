@@ -23,14 +23,23 @@ export type Quiz = {
     questions: Question[];
 };
 
+export type Subject = {
+  id: string;
+  name: string;
+  year: LectureYear;
+  semester: Semester;
+  createdAt: Timestamp;
+}
+
 export type Lecture = {
   id: string;
   title: string;
   description: string;
   pdfUrl: string;
-  subject: string;
-  semester: Semester;
+  subjectId: string;
+  subjectName: string; // For easy display
   year: LectureYear;
+  semester: Semester;
   createdAt: Timestamp;
   quiz?: Quiz;
 };
@@ -44,5 +53,3 @@ export type Student = {
     createdAt: Date;
     year?: LectureYear;
 }
-
-    

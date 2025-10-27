@@ -1,0 +1,150 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { collection, getDocs, query, orderBy, deleteDoc, doc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { useToast } from "@/hooks/use-toast";
+import type { Subject, LectureYear, Semester } from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Loader2, Trash2, BookCopy } from "lucide-react";
+import AddSubjectDialog from "./add-subject-dialog";
+import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
+
+const yearMap: Record<LectureYear, string> = {
+  first: "الفرقة الأولى",
+  second: "الفرقة الثانية",
+  third: "الفرقة الثالثة",
+  fourth: "الفرقة الرابعة",
+};
+
+const semesterMap: Record<Semester, string> = {
+  first: "فصل أول",
+  second: "فصل ثاني",
+};
+
+export default function SubjectsPage() {
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  const fetchSubjects = useCallback(async () => {
+    setLoading(true);
+    try {
+      const q = query(collection(db, "subjects"), orderBy("createdAt", "desc"));
+      const querySnapshot = await getDocs(q);
+      const subjectsList: Subject[] = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Subject));
+      setSubjects(subjectsList);
+    } catch (error) {
+      console.error("Error fetching subjects: ", error);
+      toast({
+        variant: "destructive",
+        title: "فشل تحميل المواد",
+        description: "حدث خطأ أثناء جلب بيانات المواد الدراسية.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    fetchSubjects();
+  }, [fetchSubjects]);
+
+  const handleDelete = async (subjectId: string) => {
+    // TODO: Add logic to delete related lectures and quizzes.
+    try {
+      await deleteDoc(doc(db, "subjects", subjectId));
+      toast({
+        title: "تم حذف المادة",
+      });
+      fetchSubjects();
+    } catch (error) {
+      console.error("Error deleting subject: ", error);
+      toast({
+        variant: "destructive",
+        title: "فشل حذف المادة",
+      });
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">إدارة المواد الدراسية</h2>
+          <p className="text-muted-foreground">إضافة وتعديل المواد الدراسية التي تقدمها المنصة.</p>
+        </div>
+        <AddSubjectDialog onSubjectAdded={fetchSubjects} />
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      ) : subjects.length > 0 ? (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {subjects.map((subject) => (
+            <Card key={subject.id} className="flex flex-col">
+              <CardHeader>
+                <CardTitle>{subject.name}</CardTitle>
+                <CardDescription className="flex items-center gap-2 pt-1">
+                    <Badge variant="outline">{yearMap[subject.year]}</Badge>
+                    <Badge variant="outline">{semesterMap[subject.semester]}</Badge>
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                 {/* Can add more details here in future like lecture count */}
+              </CardContent>
+              <CardFooter className="flex justify-between items-center">
+                 <Button asChild>
+                  <Link href={`/admin/lectures?subjectId=${subject.id}`}>
+                    <BookCopy className="ml-2 h-4 w-4" />
+                    عرض المحاضرات
+                  </Link>
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="icon">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>هل أنت متأكد؟</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        هذا الإجراء سيحذف المادة وجميع المحاضرات والاختبارات المرتبطة بها بشكل نهائي.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleDelete(subject.id)}>
+                        حذف
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center text-muted-foreground py-24 border rounded-lg">
+          <p>لا توجد مواد دراسية بعد. قم بإضافة مادتك الدراسية الأولى.</p>
+        </div>
+      )}
+    </div>
+  );
+}

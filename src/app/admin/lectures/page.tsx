@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { collection, getDocs, query, orderBy, deleteDoc, doc } from "firebase/firestore";
+import { useState, useEffect, useCallback } from "react";
+import { collection, getDocs, query, orderBy, deleteDoc, doc, where, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import type { Lecture } from "@/lib/types";
+import type { Lecture, Subject } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,50 +18,62 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Trash2, FileQuestion } from "lucide-react";
+import { Loader2, Trash2, FileQuestion, ArrowRight } from "lucide-react";
 import AddLectureDialog from "./add-lecture-dialog";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
-
-const yearMap = {
-  first: "الفرقة الأولى",
-  second: "الفرقة الثانية",
-  third: "الفرقة الثالثة",
-  fourth: "الفرقة الرابعة",
-};
-
-const semesterMap = {
-  first: "الفصل الأول",
-  second: "الفصل الثاني",
-};
+import { useSearchParams, useRouter } from 'next/navigation';
 
 export default function LecturesPage() {
   const [lectures, setLectures] = useState<Lecture[]>([]);
+  const [subject, setSubject] = useState<Subject | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const subjectId = searchParams.get('subjectId');
 
-  const fetchLectures = useCallback(async () => {
+  const fetchLecturesAndSubject = useCallback(async () => {
+    if (!subjectId) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
-      const q = query(collection(db, "lectures"), orderBy("createdAt", "desc"));
+      // Fetch Subject
+      const subjectRef = doc(db, "subjects", subjectId);
+      const subjectSnap = await getDoc(subjectRef);
+      if(subjectSnap.exists()) {
+          setSubject({ id: subjectSnap.id, ...subjectSnap.data() } as Subject);
+      } else {
+          toast({ variant: "destructive", title: "المادة غير موجودة" });
+          router.push("/admin/subjects");
+          return;
+      }
+
+      // Fetch Lectures
+      const q = query(
+        collection(db, "lectures"),
+        where("subjectId", "==", subjectId),
+        orderBy("createdAt", "desc")
+      );
       const querySnapshot = await getDocs(q);
       const lecturesList: Lecture[] = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Lecture));
       setLectures(lecturesList);
     } catch (error) {
-      console.error("Error fetching lectures: ", error);
+      console.error("Error fetching data: ", error);
       toast({
         variant: "destructive",
-        title: "فشل تحميل المحاضرات",
-        description: "حدث خطأ أثناء جلب بيانات المحاضرات.",
+        title: "فشل تحميل البيانات",
+        description: "حدث خطأ أثناء جلب بيانات المحاضرات والمادة.",
       });
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, subjectId, router]);
 
   useEffect(() => {
-    fetchLectures();
-  }, [fetchLectures]);
+    fetchLecturesAndSubject();
+  }, [fetchLecturesAndSubject]);
 
   const handleDelete = async (lectureId: string) => {
     try {
@@ -69,7 +81,7 @@ export default function LecturesPage() {
       toast({
         title: "تم حذف المحاضرة",
       });
-      fetchLectures();
+      fetchLecturesAndSubject();
     } catch (error) {
       console.error("Error deleting lecture: ", error);
       toast({
@@ -78,99 +90,90 @@ export default function LecturesPage() {
       });
     }
   };
-  
-  const groupedLectures = useMemo(() => {
-    return lectures.reduce((acc, lecture) => {
-        const { year } = lecture;
-        if (!acc[year]) {
-            acc[year] = [];
-        }
-        acc[year].push(lecture);
-        return acc;
-    }, {} as Record<string, Lecture[]>);
-  }, [lectures]);
+
+  if (!subjectId) {
+    return (
+      <div className="text-center text-muted-foreground py-24 border rounded-lg">
+        <p>الرجاء تحديد مادة أولاً من صفحة <Link href="/admin/subjects" className="underline font-bold">المواد الدراسية</Link> لعرض محاضراتها.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">إدارة المحاضرات والاختبارات</h2>
-          <p className="text-muted-foreground">إضافة وتعديل المحاضرات والاختبارات المرتبطة بها.</p>
+       <Button variant="ghost" onClick={() => router.push('/admin/subjects')}>
+            <ArrowRight className="ml-2 h-4 w-4" />
+            العودة للمواد الدراسية
+        </Button>
+
+      {subject && (
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold">محاضرات مادة: {subject.name}</h2>
+            <p className="text-muted-foreground">إضافة وتعديل المحاضرات التابعة لهذه المادة.</p>
+          </div>
+          <AddLectureDialog onLectureAdded={fetchLecturesAndSubject} subject={subject} />
         </div>
-        <AddLectureDialog onLectureAdded={fetchLectures} />
-      </div>
+      )}
 
       {loading ? (
         <div className="flex items-center justify-center h-64">
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
-      ) : (
-        <div className="space-y-8">
-          {Object.keys(groupedLectures).length > 0 ? (
-            Object.entries(groupedLectures).map(([year, lecturesInYear]) => (
-              <div key={year}>
-                <h3 className="text-xl font-bold mb-4">{yearMap[year as keyof typeof yearMap]}</h3>
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {lecturesInYear.map((lecture) => (
-                    <Card key={lecture.id} className="flex flex-col">
-                      <CardHeader>
-                        <CardTitle>{lecture.title}</CardTitle>
-                         <div className="flex flex-wrap items-center gap-2 pt-2">
-                            <Badge variant="secondary">{lecture.subject}</Badge>
-                            <Badge variant="outline">{semesterMap[lecture.semester]}</Badge>
-                        </div>
-                        {lecture.quiz && (
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground pt-1">
-                            <FileQuestion className="h-4 w-4" />
-                            <span>يحتوي على اختبار: {lecture.quiz.title}</span>
-                          </div>
-                        )}
-                      </CardHeader>
-                      <CardContent className="flex-grow">
-                        <p className="text-muted-foreground line-clamp-2 h-10">{lecture.description}</p>
-                      </CardContent>
-                      <CardFooter className="flex justify-between items-center">
-                        <Button variant="outline" asChild>
-                          <Link href={`/lectures/${lecture.id}`} target="_blank" rel="noopener noreferrer">
-                            عرض
-                          </Link>
+      ) : lectures.length > 0 ? (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {lectures.map((lecture) => (
+            <Card key={lecture.id} className="flex flex-col">
+              <CardHeader>
+                <CardTitle>{lecture.title}</CardTitle>
+                {lecture.quiz && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground pt-1">
+                    <FileQuestion className="h-4 w-4" />
+                    <span>يحتوي على اختبار: {lecture.quiz.title}</span>
+                  </div>
+                )}
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <p className="text-muted-foreground line-clamp-2 h-10">{lecture.description}</p>
+              </CardContent>
+              <CardFooter className="flex justify-between items-center">
+                <Button variant="outline" asChild>
+                  <Link href={`/lectures/${lecture.id}`} target="_blank" rel="noopener noreferrer">
+                    عرض
+                  </Link>
+                </Button>
+                <div className="flex gap-2">
+                    <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="icon">
+                        <Trash2 className="h-4 w-4" />
                         </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="icon">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>هل أنت متأكد؟</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                هذا الإجراء سيحذف المحاضرة وأي اختبار مرتبط بها بشكل نهائي.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete(lecture.id)}>
-                                حذف
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </CardFooter>
-                    </Card>
-                  ))}
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                        <AlertDialogTitle>هل أنت متأكد؟</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            هذا الإجراء سيحذف المحاضرة وأي اختبار مرتبط بها بشكل نهائي.
+                        </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                        <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDelete(lecture.id)}>
+                            حذف
+                        </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                    </AlertDialog>
                 </div>
-              </div>
-            ))
-          ) : (
-            <div className="text-center text-muted-foreground py-12 border rounded-lg">
-              <p>لا توجد محاضرات. قم بإضافة محاضرتك الأولى.</p>
-            </div>
-          )}
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center text-muted-foreground py-12 border rounded-lg">
+          {subject && <p>لا توجد محاضرات لهذه المادة. قم بإضافة محاضرتك الأولى من زر "إضافة محاضرة".</p>}
         </div>
       )}
     </div>
   );
 }
-
-    

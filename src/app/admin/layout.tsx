@@ -17,15 +17,16 @@ import {
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookHeart, Users, BookCopy, ClipboardCheck, LogOut, Loader2 } from 'lucide-react';
+import { BookHeart, Users, BookCopy, ClipboardCheck, LogOut, Loader2, Library } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 
 const navItems = [
+  { href: '/admin/subjects', label: 'المواد الدراسية', icon: Library },
+  { href: '/admin/lectures', label: 'المحاضرات', icon: BookCopy },
   { href: '/admin/students', label: 'الطلاب', icon: Users },
-  { href: '/admin/lectures', label: 'المحاضرات والاختبارات', icon: BookCopy },
   { href: '/admin/assignments', label: 'التكليفات', icon: ClipboardCheck },
 ];
 

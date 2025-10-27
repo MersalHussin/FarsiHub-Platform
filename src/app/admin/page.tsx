@@ -8,7 +8,7 @@ export default function AdminPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/admin/students');
+    router.replace('/admin/subjects');
   }, [router]);
 
   return (

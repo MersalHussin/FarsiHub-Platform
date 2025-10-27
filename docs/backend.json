@@ -20,12 +20,13 @@
       "description": "A course subject.",
       "type": "object",
       "properties": {
+        "id": { "type": "string" },
         "name": { "type": "string" },
         "year": { "type": "string", "enum": ["first", "second", "third", "fourth"] },
         "semester": { "type": "string", "enum": ["first", "second"] },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["name", "year", "semester", "createdAt"]
+      "required": ["id", "name", "year", "semester", "createdAt"]
     },
     "lecture": {
       "title": "Lecture",

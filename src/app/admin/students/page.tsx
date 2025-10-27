@@ -56,7 +56,7 @@ export default function StudentsPage() {
     fetchStudents();
   }, [toast]);
 
-  const handleApprovalChange = async (studentId: string, approved: boolean) => {
+  const handleApprovalChange = (studentId: string, approved: boolean) => {
     const studentRef = doc(db, "users", studentId);
     const updateData = { approved };
     updateDoc(studentRef, updateData)

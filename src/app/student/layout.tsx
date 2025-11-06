@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, User, FileQuestion, Loader2 } from 'lucide-react';
+import { Home, User, FileQuestion, Loader2, AlertTriangle } from 'lucide-react';
 import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -18,6 +18,15 @@ const navItems = [
   { href: '/student/profile', label: 'الملف الشخصي', icon: User },
 ];
 
+function PendingApprovalBanner() {
+    return (
+        <div className="bg-destructive text-destructive-foreground p-2 text-center text-sm flex items-center justify-center gap-2">
+            <AlertTriangle className="h-4 w-4" />
+            <span>حسابك قيد المراجعة. يجب التواصل مع الدعم لتفعيل حسابك.</span>
+        </div>
+    );
+}
+
 export default function StudentLayout({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
@@ -25,14 +34,14 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
   
   useEffect(() => {
     if (!loading) {
-        if (!user || user.role !== 'student' || !user.approved) {
+        if (!user || user.role !== 'student') {
             router.replace('/login');
         }
     }
   }, [user, loading, router]);
 
 
-  if (loading || !user || !user.approved) {
+  if (loading || !user) {
     return (
         <div className="flex h-screen items-center justify-center">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
@@ -41,9 +50,10 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <>
+    <div className="flex flex-col min-h-screen">
+      {!user.approved && <PendingApprovalBanner />}
       <Header />
-      <div className="container mx-auto flex flex-col md:flex-row min-h-[calc(100vh-4rem)]">
+      <div className="container mx-auto flex flex-col md:flex-row flex-grow">
         <aside className="w-full md:w-64 border-b md:border-b-0 md:border-l p-4">
           <nav className="flex flex-row md:flex-col gap-2">
             {navItems.map((item) => (
@@ -68,6 +78,6 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
             {children}
         </main>
       </div>
-    </>
+    </div>
   );
 }

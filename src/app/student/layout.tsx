@@ -2,11 +2,10 @@
 
 import type { ReactNode } from 'react';
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Home, User, FileQuestion, Loader2 } from 'lucide-react';
+import { Home, User, FileQuestion, Loader2, AlertTriangle } from 'lucide-react';
 import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -25,12 +24,26 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   
   useEffect(() => {
-    if (!loading) {
-        if (!user || user.role !== 'student') {
-            router.replace('/login');
-        }
+    if (loading) return;
+
+    if (!user) {
+        router.replace('/login');
+        return;
     }
-  }, [user, loading, router]);
+
+    if (user.role !== 'student') {
+        router.replace('/login');
+        return;
+    }
+
+    // If user is a student but hasn't selected their year,
+    // redirect them to onboarding, unless they are already on it.
+    if (!user.year && pathname !== '/student/onboarding') {
+        router.replace('/student/onboarding');
+        return;
+    }
+
+  }, [user, loading, router, pathname]);
 
 
   if (loading || !user) {
@@ -40,25 +53,31 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
         </div>
     );
   }
+  
+  // This layout is for onboarded students. The onboarding page has its own minimal layout.
+  // We check the path to prevent the main layout from rendering on the onboarding page.
+  if (pathname === '/student/onboarding') {
+    return <>{children}</>;
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      <div className="container mx-auto flex flex-col md:flex-row flex-grow">
-        <aside className="w-full md:w-64 border-b md:border-b-0 md:border-l p-4">
-          <nav className="flex flex-row md:flex-col gap-2">
+      <div className="container mx-auto flex flex-col md:flex-row flex-grow py-6">
+        <aside className="w-full md:w-64 md:border-l-2 md:pl-6">
+          <nav className="flex flex-row md:flex-col gap-2 border-b-2 md:border-b-0 pb-4 mb-4">
             {navItems.map((item) => (
               <Button
                 key={item.href}
                 variant="ghost"
                 asChild
                 className={cn(
-                  'justify-start gap-2 flex-1 md:flex-none',
-                  pathname === item.href && 'bg-accent text-accent-foreground'
+                  'justify-start gap-3 flex-1 md:flex-none text-base md:text-sm px-4 py-3 h-auto',
+                  pathname === item.href && 'bg-primary/10 text-primary font-bold'
                 )}
               >
                 <Link href={item.href}>
-                  <item.icon className="h-4 w-4" />
+                  <item.icon className="h-5 w-5" />
                   {item.label}
                 </Link>
               </Button>

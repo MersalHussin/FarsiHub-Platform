@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, BookHeart } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { type LectureYear } from "@/lib/types";
@@ -21,11 +21,24 @@ const yearMap: Record<LectureYear, string> = {
 };
 
 export default function OnboardingPage() {
-  const { user } = useAuth();
+  const { user, loading, logout, refreshUser } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [selectedYear, setSelectedYear] = useState<LectureYear | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Redirect if user is not a student or has already selected a year
+  useEffect(() => {
+    if (!loading && user) {
+        if (user.role !== 'student' || user.year) {
+            router.replace('/dashboard');
+        }
+    }
+     if (!loading && !user) {
+        router.replace('/login');
+     }
+  }, [user, loading, router]);
+
 
   const handleSave = async () => {
     if (!user || !selectedYear) {
@@ -35,16 +48,21 @@ export default function OnboardingPage() {
         });
       return;
     }
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
       const userRef = doc(db, "users", user.uid);
       await updateDoc(userRef, { year: selectedYear });
+      
+      // Manually refresh user context to get the new 'year'
+      await refreshUser();
+
       toast({
         title: "تم الحفظ بنجاح!",
         description: "سيتم توجيهك إلى لوحة التحكم.",
       });
-      // A hard refresh to ensure the new user data (with year) is fetched by the layout
-      window.location.href = '/student';
+
+      router.push('/dashboard');
+
     } catch (error) {
       console.error("Error updating user year: ", error);
       toast({
@@ -52,12 +70,11 @@ export default function OnboardingPage() {
         title: "فشل حفظ البيانات",
         description: "حدث خطأ ما، يرجى المحاولة مرة أخرى.",
       });
-    } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
   
-  if (!user) {
+  if (loading || !user || user.year) {
     return (
         <div className="flex min-h-screen items-center justify-center bg-background">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
@@ -66,15 +83,21 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-lg">
-        <CardHeader>
-          <CardTitle className="text-2xl">أهلاً بك يا {user.name}!</CardTitle>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-muted/40 p-4">
+       <div className="absolute top-6">
+         <div className="flex items-center gap-2 font-bold text-xl">
+            <BookHeart className="h-7 w-7 text-primary" />
+            <span>فارسي هب</span>
+         </div>
+      </div>
+      <Card className="w-full max-w-lg shadow-lg">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl">خطوة أخيرة يا {user.name}!</CardTitle>
           <CardDescription>
-            قبل أن تبدأ، يرجى تحديد فرقتك الدراسية الحالية. سيساعدنا هذا على تخصيص المحتوى لك.
+            لتخصيص تجربتك التعليمية، يرجى تحديد فرقتك الدراسية الحالية.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6 pt-2">
           <RadioGroup 
             onValueChange={(value) => setSelectedYear(value as LectureYear)}
             className="grid grid-cols-1 sm:grid-cols-2 gap-4"
@@ -83,18 +106,23 @@ export default function OnboardingPage() {
               <Label 
                 key={yearKey} 
                 htmlFor={yearKey}
-                className="flex items-center space-x-3 space-x-reverse rounded-md border p-4 cursor-pointer hover:bg-accent hover:text-accent-foreground has-[:checked]:bg-primary has-[:checked]:text-primary-foreground"
+                className="flex items-center justify-center text-lg space-x-3 space-x-reverse rounded-lg border-2 p-4 cursor-pointer transition-all hover:border-primary has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:checked]:text-primary"
               >
-                <RadioGroupItem value={yearKey} id={yearKey} className="border-muted-foreground text-primary-foreground" />
+                <RadioGroupItem value={yearKey} id={yearKey} className="h-5 w-5" />
                 <span className="font-bold">{yearMap[yearKey as LectureYear]}</span>
               </Label>
             ))}
           </RadioGroup>
-          <Button onClick={handleSave} className="w-full" disabled={isLoading || !selectedYear}>
-            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            حفظ والمتابعة
-          </Button>
         </CardContent>
+        <CardFooter className="flex flex-col gap-4">
+             <Button onClick={handleSave} className="w-full" size="lg" disabled={isSubmitting || !selectedYear}>
+                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                حفظ والمتابعة
+            </Button>
+            <Button variant="link" size="sm" className="text-muted-foreground" onClick={logout}>
+                تسجيل الخروج
+            </Button>
+        </CardFooter>
       </Card>
     </div>
   );

@@ -4,12 +4,21 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, BookHeart, LayoutDashboard } from 'lucide-react';
+import { Menu, BookHeart, LayoutDashboard, AlertTriangle } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
+
+function PendingApprovalBanner() {
+    return (
+        <div className="bg-destructive text-destructive-foreground p-2 text-center text-sm flex items-center justify-center gap-2">
+            <AlertTriangle className="h-4 w-4" />
+            <span>حسابك قيد المراجعة. يجب التواصل مع الدعم لتفعيل حسابك.</span>
+        </div>
+    );
+}
 
 export function Header() {
   const { user, loading, logout } = useAuth();
@@ -123,36 +132,37 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-card shadow-sm">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-          <BookHeart className="h-7 w-7 text-primary" />
-          <span>فارسي هب</span>
-        </Link>
+        {user && user.role === 'student' && !user.approved && <PendingApprovalBanner />}
+        <div className="container mx-auto flex h-16 items-center justify-between px-4">
+            <Link href="/" className="flex items-center gap-2 font-bold text-xl">
+            <BookHeart className="h-7 w-7 text-primary" />
+            <span>فارسي هب</span>
+            </Link>
 
-        {isMobile ? (
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="icon">
-                <Menu className="h-6 w-6" />
-                <span className="sr-only">Open menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right">
-              <nav className="flex flex-col gap-2 mt-8">
-                <NavLinks isMobile={true}/>
-              </nav>
-               <AuthArea isMobile={true}/>
-            </SheetContent>
-          </Sheet>
-        ) : (
-          <div className='flex items-center gap-4'>
-             <nav className="flex items-center gap-2">
-              <NavLinks />
-            </nav>
-            <AuthArea />
-          </div>
-        )}
-      </div>
+            {isMobile ? (
+            <Sheet>
+                <SheetTrigger asChild>
+                <Button variant="outline" size="icon">
+                    <Menu className="h-6 w-6" />
+                    <span className="sr-only">Open menu</span>
+                </Button>
+                </SheetTrigger>
+                <SheetContent side="right">
+                <nav className="flex flex-col gap-2 mt-8">
+                    <NavLinks isMobile={true}/>
+                </nav>
+                <AuthArea isMobile={true}/>
+                </SheetContent>
+            </Sheet>
+            ) : (
+            <div className='flex items-center gap-4'>
+                <nav className="flex items-center gap-2">
+                <NavLinks />
+                </nav>
+                <AuthArea />
+            </div>
+            )}
+        </div>
     </header>
   );
 }

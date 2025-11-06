@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { collection, getDocs, query, orderBy, where, collectionGroup } from "firebase/firestore";
+import { collection, getDocs, query, orderBy, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -30,7 +30,7 @@ const yearMap: Record<LectureYear, string> = {
 
 export default function LecturesPage() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [lectures, setLectures] = useState<Lecture[]>([]);
+  const [lecturesBySubject, setLecturesBySubject] = useState<Record<string, Lecture[]>>({});
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -53,37 +53,31 @@ export default function LecturesPage() {
       const subjectsList: Subject[] = subjectsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Subject));
       setSubjects(subjectsList);
 
-      // Fetch all lectures for the user's year
-      const lecturesQuery = query(
-        collectionGroup(db, "lectures"),
-        where("year", "==", user.year),
-        orderBy("createdAt", "desc")
-      );
-      const lecturesSnapshot = await getDocs(lecturesQuery);
-      const lecturesList: Lecture[] = lecturesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Lecture));
-      setLectures(lecturesList);
+      // Fetch lectures for each subject
+      const lecturesData: Record<string, Lecture[]> = {};
+      for (const subject of subjectsList) {
+        const lecturesQuery = query(
+            collection(db, "subjects", subject.id, "lectures"),
+            orderBy("createdAt", "desc")
+        );
+        const lecturesSnapshot = await getDocs(lecturesQuery);
+        lecturesData[subject.id] = lecturesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Lecture));
+      }
+      setLecturesBySubject(lecturesData);
 
     } catch (error: any) {
       console.error("Error fetching data: ", error);
-      if (error.code === 'failed-precondition') {
-        toast({
-            variant: "destructive",
-            title: "فهرسة مطلوبة",
-            description: "قاعدة البيانات تحتاج إلى فهرس للاستعلام. يتم إنشاؤه الآن تلقائياً وقد يستغرق بضع دقائق. يرجى المحاولة مرة أخرى قريباً.",
-        });
-      } else {
-        toast({
-            variant: "destructive",
-            title: "فشل تحميل البيانات",
-        });
-      }
+      toast({
+          variant: "destructive",
+          title: "فشل تحميل البيانات",
+      });
     } finally {
       setLoading(false);
     }
   }, [toast, user?.year]);
 
   useEffect(() => {
-    if(user) {
+    if(user?.approved && user?.year) {
         fetchSubjectsAndLectures();
     } else {
         setLoading(false);
@@ -98,7 +92,7 @@ export default function LecturesPage() {
   }, [subjects, semesterFilter]);
 
   const getLecturesForSubject = (subjectId: string) => {
-    return lectures.filter(lecture => lecture.subjectId === subjectId);
+    return lecturesBySubject[subjectId] || [];
   }
 
   const renderPageContent = () => {

@@ -40,12 +40,12 @@ export default function DashboardPage() {
       if (user.role === 'admin') {
         router.replace('/admin');
       } else if (user.role === 'student') {
-        if (!user.approved) {
-            // Stay on this page, PendingApproval will be shown
-        } else if (!user.year) {
-            router.replace('/student/onboarding');
+        if (!user.year) {
+          router.replace('/student/onboarding');
+        } else if (!user.approved) {
+          // User has selected year, but is not approved yet. Show pending screen.
         } else {
-            router.replace('/student');
+          router.replace('/student');
         }
       }
     }
@@ -59,11 +59,12 @@ export default function DashboardPage() {
     );
   }
 
-  if (user.role === 'student' && !user.approved) {
+  // This will be shown only if the user has selected a year but is not yet approved
+  if (user.role === 'student' && user.year && !user.approved) {
     return <PendingApproval />;
   }
   
-  // This state is temporary while redirecting
+  // This state is temporary while redirecting to either onboarding or student page
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
       <Loader2 className="h-16 w-16 animate-spin text-primary" />

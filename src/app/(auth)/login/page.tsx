@@ -39,7 +39,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const { user, loading } = useAuth();
+  const { user, loading, refreshUser } = useAuth();
 
   useEffect(() => {
     if (!loading && user) {
@@ -60,10 +60,12 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
+      await refreshUser(); // Force a refresh of user data
       toast({
         title: "تم تسجيل الدخول بنجاح",
+        description: "سيتم توجيهك الآن...",
       });
-      router.push("/dashboard");
+      // No longer need router.push, the useEffect will handle it
     } catch (error: any) {
       console.error(error);
       let errorMessage = "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.";

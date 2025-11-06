@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import Link from 'next/link';
@@ -22,17 +23,21 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   
-  if (loading) {
+  useEffect(() => {
+    if (!loading) {
+        if (!user || user.role !== 'student' || !user.approved) {
+            router.replace('/login');
+        }
+    }
+  }, [user, loading, router]);
+
+
+  if (loading || !user || !user.approved) {
     return (
         <div className="flex h-screen items-center justify-center">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
         </div>
     );
-  }
-
-  if (!user || user.role !== 'student' || !user.approved) {
-    router.replace('/login');
-    return null;
   }
 
   return (

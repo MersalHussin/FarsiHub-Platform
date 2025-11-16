@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -62,12 +61,18 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
-      // onAuthStateChanged in AuthProvider will handle the rest.
-      // No need to call refreshUser or router.push here.
+      // Explicitly refresh the user context to get the latest data
+      await refreshUser();
+      
       toast({
         title: "تم تسجيل الدخول بنجاح",
         description: "سيتم توجيهك الآن...",
       });
+      
+      // The useEffect hook will now handle the redirection with the updated user state.
+      // A fallback push for safety in case useEffect doesn't fire immediately.
+      router.push("/dashboard");
+
     } catch (error: any) {
       console.error(error);
       let errorMessage = "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.";

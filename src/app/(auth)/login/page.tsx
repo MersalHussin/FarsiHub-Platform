@@ -42,9 +42,10 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { user, loading, refreshUser } = useAuth();
 
+  // Redirect if user is already logged in
   useEffect(() => {
     if (!loading && user) {
-      router.replace("/");
+      router.replace("/dashboard");
     }
   }, [user, loading, router]);
 
@@ -61,12 +62,12 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
-      await refreshUser(); // Manually refresh user state
+      // onAuthStateChanged in AuthProvider will handle the rest.
+      // No need to call refreshUser or router.push here.
       toast({
         title: "تم تسجيل الدخول بنجاح",
         description: "سيتم توجيهك الآن...",
       });
-      router.push("/");
     } catch (error: any) {
       console.error(error);
       let errorMessage = "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.";
@@ -83,6 +84,7 @@ export default function LoginPage() {
     }
   }
 
+  // Show a loading spinner while checking auth state or if user is logged in
   if (loading || user) {
     return (
       <div className="flex h-screen w-full items-center justify-center">

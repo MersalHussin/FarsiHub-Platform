@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -36,18 +36,9 @@ const formSchema = z.object({
 });
 
 export default function LoginPage() {
-  const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const { user, loading, refreshUser } = useAuth();
-
-  // Redirect if user is already logged in
-  useEffect(() => {
-    if (!loading && user) {
-      router.replace("/dashboard");
-    }
-  }, [user, loading, router]);
-
+  const { loading, user } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -61,18 +52,11 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
-      // Explicitly refresh the user context to get the latest data
-      await refreshUser();
-      
       toast({
         title: "تم تسجيل الدخول بنجاح",
         description: "سيتم توجيهك الآن...",
       });
-      
-      // The useEffect hook will now handle the redirection with the updated user state.
-      // A fallback push for safety in case useEffect doesn't fire immediately.
-      router.push("/dashboard");
-
+      // The AuthProvider will handle the redirection.
     } catch (error: any) {
       console.error(error);
       let errorMessage = "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.";
@@ -88,15 +72,16 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   }
-
-  // Show a loading spinner while checking auth state or if user is logged in
+  
   if (loading || user) {
-    return (
+     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
+        <p className="ml-4">جارِ التحقق من جلسة الدخول...</p>
       </div>
     );
   }
+
 
   return (
     <Card className="w-full max-w-md">

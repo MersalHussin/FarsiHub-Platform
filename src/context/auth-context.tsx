@@ -5,7 +5,7 @@ import { onAuthStateChanged, User as FirebaseUser, deleteUser, updateProfile } f
 import { doc, getDoc, Timestamp, deleteDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import type { AppUser } from '@/lib/types';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 interface AuthContextType {
@@ -23,51 +23,80 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
 
-  const fetchUserData = useCallback(async (firebaseUser: FirebaseUser | null) => {
-    if (firebaseUser) {
-      try {
-        const userDocRef = doc(db, 'users', firebaseUser.uid);
-        const userDoc = await getDoc(userDocRef);
+  const fetchUserData = useCallback(async (firebaseUser: FirebaseUser) => {
+    try {
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      const userDoc = await getDoc(userDocRef);
 
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          setUser({
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const appUser = {
             ...firebaseUser,
             name: userData.name,
             role: userData.role,
             approved: userData.approved,
             createdAt: userData.createdAt,
             year: userData.year,
-          } as AppUser);
-        } else {
-          // This case might happen briefly after signup before user doc is created.
-          // Setting user to null forces a "not logged in" state until doc is ready.
-          setUser(null);
-        }
-      } catch (error) {
-        console.error("Error fetching user data:", error);
+        } as AppUser;
+        setUser(appUser);
+        return appUser;
+      } else {
+        // User exists in Auth, but not in Firestore. This is an inconsistent state.
+        // Log them out.
+        await auth.signOut();
         setUser(null);
+        return null;
       }
-    } else {
+    } catch (error) {
+      console.error("Error fetching user data:", error);
       setUser(null);
+      return null;
     }
-    setLoading(false);
   }, []);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
-      setLoading(true); // Set loading to true whenever auth state changes
-      fetchUserData(firebaseUser);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setLoading(true);
+      if (firebaseUser) {
+        await fetchUserData(firebaseUser);
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
     });
 
     return () => unsubscribe();
   }, [fetchUserData]);
   
+  useEffect(() => {
+    if (loading) return; // Don't do anything while loading
+
+    const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/signup');
+
+    if (user) {
+      // User is logged in
+      if (isAuthPage) {
+         // Redirect from auth pages to dashboard if logged in
+         router.replace('/dashboard');
+      }
+    } else {
+      // User is not logged in
+      const protectedPaths = ['/dashboard', '/admin', '/student', '/lectures', '/assignments', '/quizzes'];
+      const isProtected = protectedPaths.some(path => pathname.startsWith(path));
+      
+      if (isProtected) {
+        router.replace('/login');
+      }
+    }
+
+  }, [user, loading, pathname, router]);
+
   const logout = async () => {
     await auth.signOut();
-    // No need to set user to null here, onAuthStateChanged will handle it.
-    router.push('/login');
+    // onAuthStateChanged will handle setting user to null
+    // The useEffect above will handle redirection
   };
 
   const refreshUser = useCallback(async () => {
@@ -76,6 +105,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setLoading(true);
         await currentUser.reload(); // Reloads user from Firebase Auth
         await fetchUserData(currentUser); // Fetches user data from Firestore
+        setLoading(false);
     }
   },[fetchUserData]);
 
@@ -85,18 +115,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw new Error("No user is currently signed in.");
     }
     try {
-        // 1. Delete user document from Firestore
         const userDocRef = doc(db, 'users', currentUser.uid);
         await deleteDoc(userDocRef);
-
-        // 2. Delete user from Firebase Authentication
         await deleteUser(currentUser);
-        
-        // Auth state will be updated by onAuthStateChanged listener
     } catch (error) {
         console.error("Error deleting account:", error);
-        // This might be a re-authentication error.
-        // For simplicity, we just throw, but in a real app you might handle re-authentication.
         throw error;
     }
   };
@@ -107,14 +130,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw new Error("No user is currently signed in.");
     }
     try {
-        // 1. Update Firebase Authentication user profile
         await updateProfile(currentUser, { photoURL });
-
-        // 2. Update the photoURL in the Firestore document
         const userDocRef = doc(db, 'users', currentUser.uid);
         await updateDoc(userDocRef, { photoURL });
-
-        // 3. Refresh user state to reflect changes immediately
         await refreshUser();
     } catch (error) {
         console.error("Error updating profile picture:", error);

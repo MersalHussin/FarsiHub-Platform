@@ -90,7 +90,8 @@ export default function StudentProfilePage() {
                     <h3 className="font-semibold mb-2">تفاصيل الحساب</h3>
                     <div className="space-y-1 text-sm text-muted-foreground">
                         <div><span className="font-medium text-foreground min-w-[80px] inline-block">الدور:</span> <Badge variant="secondary">طالب</Badge></div>
-                        <div><span className="font-medium text-foreground min-w-[80px] inline-block">الحالة:</span> 
+                        <div>
+                            <span className="font-medium text-foreground min-w-[80px] inline-block">الحالة:</span>
                             {user.approved ? (
                                 <Badge className="bg-green-100 text-green-800 hover:bg-green-100">مُفعّل</Badge>
                             ) : (
@@ -143,7 +144,7 @@ export default function StudentProfilePage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <p className='text-sm'>إذا قمت بحذف حسابك، ستفقد الوصول إلى جميع المحاضرات ونتائج الاختبارات بشكل نهائي.</p>
+                    <div className='text-sm'>إذا قمت بحذف حسابك، ستفقد الوصول إلى جميع المحاضرات ونتائج الاختبارات بشكل نهائي.</div>
                 </CardContent>
                 <CardFooter className="flex justify-start">
                      <AlertDialog>
@@ -169,3 +170,4 @@ export default function StudentProfilePage() {
             </Card>
         </div>
     );
+}

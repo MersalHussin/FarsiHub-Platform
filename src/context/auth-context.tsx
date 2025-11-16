@@ -1,8 +1,8 @@
 "use client";
 
 import { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { onAuthStateChanged, User as FirebaseUser, deleteUser } from 'firebase/auth';
-import { doc, getDoc, Timestamp, deleteDoc } from 'firebase/firestore';
+import { onAuthStateChanged, User as FirebaseUser, deleteUser, updateProfile } from 'firebase/auth';
+import { doc, getDoc, Timestamp, deleteDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import type { AppUser } from '@/lib/types';
 import { useRouter } from 'next/navigation';
@@ -14,6 +14,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   deleteAccount: () => Promise<void>;
+  updateProfilePicture: (photoURL: string) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -73,7 +74,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const currentUser = auth.currentUser;
     if (currentUser) {
         setLoading(true);
-        await fetchUserData(currentUser);
+        await currentUser.reload(); // Reloads user from Firebase Auth
+        await fetchUserData(currentUser); // Fetches user data from Firestore
     }
   },[fetchUserData]);
 
@@ -99,7 +101,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const value = { user, loading, logout, refreshUser, deleteAccount };
+  const updateProfilePicture = async (photoURL: string) => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+        throw new Error("No user is currently signed in.");
+    }
+    try {
+        // 1. Update Firebase Authentication user profile
+        await updateProfile(currentUser, { photoURL });
+
+        // 2. Update the photoURL in the Firestore document
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        await updateDoc(userDocRef, { photoURL });
+
+        // 3. Refresh user state to reflect changes immediately
+        await refreshUser();
+    } catch (error) {
+        console.error("Error updating profile picture:", error);
+        throw error;
+    }
+  };
+
+
+  const value = { user, loading, logout, refreshUser, deleteAccount, updateProfilePicture };
 
   return (
     <AuthContext.Provider value={value}>

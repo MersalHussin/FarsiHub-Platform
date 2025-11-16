@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -9,11 +10,19 @@ import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import Image from 'next/image';
+
+const boyAvatarUrl = 'https://i.suar.me/81XmV/l';
+const girlAvatarUrl = 'https://i.suar.me/j5Q7x/l';
 
 export default function StudentProfilePage() {
-    const { user, deleteAccount } = useAuth();
+    const { user, deleteAccount, updateProfilePicture } = useAuth();
     const { toast } = useToast();
     const router = useRouter();
+    const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
+    const [isSavingAvatar, setIsSavingAvatar] = useState(false);
 
     if (!user) {
         return <div className="flex h-full w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -40,6 +49,25 @@ export default function StudentProfilePage() {
             });
         }
     }
+
+    const handleSaveAvatar = async () => {
+        if (!selectedAvatar) {
+            toast({ variant: 'destructive', title: 'الرجاء اختيار صورة' });
+            return;
+        }
+        setIsSavingAvatar(true);
+        try {
+            await updateProfilePicture(selectedAvatar);
+            toast({ title: 'تم تحديث الصورة بنجاح' });
+            setSelectedAvatar(null);
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'فشل تحديث الصورة' });
+            console.error(error);
+        } finally {
+            setIsSavingAvatar(false);
+        }
+    };
+
 
     return (
         <div className="space-y-6">
@@ -70,6 +98,37 @@ export default function StudentProfilePage() {
                         </p>
                     </div>
                 </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>تغيير الصورة الشخصية</CardTitle>
+                    <CardDescription>اختر صورة رمزية جديدة لحسابك.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <RadioGroup
+                        value={selectedAvatar ?? undefined}
+                        onValueChange={setSelectedAvatar}
+                        className="flex flex-col sm:flex-row gap-4"
+                    >
+                         <Label htmlFor="boy-avatar" className="flex flex-col items-center gap-2 rounded-lg border-2 p-4 cursor-pointer transition-all hover:border-primary has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:checked]:text-primary">
+                            <RadioGroupItem value={boyAvatarUrl} id="boy-avatar" className="sr-only" />
+                            <Image src={boyAvatarUrl} alt="صورة ولد" width={80} height={80} className="rounded-full" />
+                            <span>ولد</span>
+                        </Label>
+                         <Label htmlFor="girl-avatar" className="flex flex-col items-center gap-2 rounded-lg border-2 p-4 cursor-pointer transition-all hover:border-primary has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:checked]:text-primary">
+                             <RadioGroupItem value={girlAvatarUrl} id="girl-avatar" className="sr-only" />
+                            <Image src={girlAvatarUrl} alt="صورة بنت" width={80} height={80} className="rounded-full" />
+                            <span>بنت</span>
+                        </Label>
+                    </RadioGroup>
+                </CardContent>
+                <CardFooter>
+                    <Button onClick={handleSaveAvatar} disabled={isSavingAvatar || !selectedAvatar}>
+                        {isSavingAvatar && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+                        حفظ الصورة
+                    </Button>
+                </CardFooter>
             </Card>
 
              <Card className="border-destructive">

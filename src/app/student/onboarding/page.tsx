@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -13,6 +14,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { type LectureYear } from "@/lib/types";
 import Image from 'next/image';
+import { cn } from "@/lib/utils";
 
 const yearMap: Record<LectureYear, string> = {
   first: "الفرقة الأولى",
@@ -136,12 +138,30 @@ export default function OnboardingPage() {
             >
                 <Label htmlFor="boy-avatar" className="flex-1 flex flex-col items-center gap-2 rounded-lg border-2 p-4 cursor-pointer transition-all hover:border-primary has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:checked]:text-primary">
                     <RadioGroupItem value={boyAvatarUrl} id="boy-avatar" className="sr-only" />
-                    <Image src={boyAvatarUrl} alt="صورة ولد" width={80} height={80} className="rounded-full" />
+                    <Image 
+                      src={boyAvatarUrl} 
+                      alt="صورة ولد" 
+                      width={80} 
+                      height={80} 
+                      className={cn(
+                        "rounded-full transition-all",
+                         selectedAvatar === boyAvatarUrl && 'ring-2 ring-offset-2 ring-primary'
+                      )}
+                    />
                     <span>ولد</span>
                 </Label>
                 <Label htmlFor="girl-avatar" className="flex-1 flex flex-col items-center gap-2 rounded-lg border-2 p-4 cursor-pointer transition-all hover:border-primary has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:checked]:text-primary">
                     <RadioGroupItem value={girlAvatarUrl} id="girl-avatar" className="sr-only" />
-                    <Image src={girlAvatarUrl} alt="صورة بنت" width={80} height={80} className="rounded-full" />
+                    <Image 
+                      src={girlAvatarUrl} 
+                      alt="صورة بنت" 
+                      width={80} 
+                      height={80} 
+                      className={cn(
+                        "rounded-full transition-all",
+                         selectedAvatar === girlAvatarUrl && 'ring-2 ring-offset-2 ring-primary'
+                      )}
+                    />
                     <span>بنت</span>
                 </Label>
             </RadioGroup>

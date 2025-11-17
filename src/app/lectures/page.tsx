@@ -14,12 +14,14 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Loader2, BookOpen } from "lucide-react";
+import { Loader2, BookOpen, FileText, FileQuestion } from "lucide-react";
 import Link from "next/link";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
 
 const yearMap: Record<LectureYear, string> = {
   first: "الفرقة الأولى",
@@ -154,7 +156,7 @@ export default function LecturesPage() {
     }
     
     return (
-        <>
+        <TooltipProvider>
             <div className="flex justify-center">
                 <Tabs dir="rtl" value={semesterFilter} onValueChange={(value) => setSemesterFilter(value as any)}>
                 <TabsList className="grid w-full grid-cols-3 max-w-sm">
@@ -183,7 +185,25 @@ export default function LecturesPage() {
                                     {subjectLectures.map((lecture) => (
                                          <Card key={lecture.id} className="flex flex-col">
                                             <CardHeader>
-                                                <CardTitle>{lecture.title}</CardTitle>
+                                                <div className="flex justify-between items-start">
+                                                    <CardTitle className="flex items-start gap-2">
+                                                        <FileText className="h-6 w-6 text-primary/80 shrink-0 mt-1" />
+                                                        <span>{lecture.title}</span>
+                                                    </CardTitle>
+                                                     {lecture.quiz && (
+                                                        <Tooltip>
+                                                            <TooltipTrigger>
+                                                                <Badge variant="outline" className="flex items-center gap-1.5">
+                                                                    <FileQuestion className="h-3.5 w-3.5"/>
+                                                                    <span>{lecture.quiz.questions.length}</span>
+                                                                </Badge>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <p>يحتوي على اختبار من {lecture.quiz.questions.length} أسئلة.</p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    )}
+                                                </div>
                                             </CardHeader>
                                             <CardContent className="flex-grow">
                                                 <p className="text-muted-foreground line-clamp-3 h-14">{lecture.description}</p>
@@ -211,7 +231,7 @@ export default function LecturesPage() {
                     </div>
                 )}
             </Accordion>
-        </>
+        </TooltipProvider>
     );
   };
 

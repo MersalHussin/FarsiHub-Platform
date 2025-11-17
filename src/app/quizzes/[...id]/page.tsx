@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { doc, getDoc, collection, addDoc, serverTimestamp, query, where, getDocs, writeBatch } from "firebase/firestore";
+import { doc, getDoc, collection, addDoc, serverTimestamp, query, where, getDocs, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
@@ -183,7 +183,12 @@ export default function TakeQuizPage() {
         setIsFinished(false);
         setScore(0);
         toast({ title: "يمكنك الآن إعادة الاختبار." });
-    } catch(e) {
+    } catch(e: any) {
+        const permissionError = new FirestorePermissionError({
+            path: `quizSubmissions/${existingSubmission.id}`,
+            operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
         toast({ variant: "destructive", title: "فشل حذف النتيجة السابقة." });
     }
   }

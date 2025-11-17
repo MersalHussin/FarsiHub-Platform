@@ -22,11 +22,9 @@ service cloud.firestore {
 
     // Rules for collections
     match /users/{userId} {
-      allow get, update, delete: if isSignedIn() && (isOwner(userId) || isAdmin());
-      allow create: if isSignedIn();
-      // Allow admins to list all users, and signed-in users to read profiles, but not list all.
-      // A more secure rule for listing would use custom claims for admins.
+      allow get: if isSignedIn() && (isOwner(userId) || isAdmin());
       allow list: if isSignedIn();
+      allow create, update, delete: if isSignedIn() && (isOwner(userId) || isAdmin());
     }
 
     match /subjects/{subjectId}/{document=**} {
@@ -36,9 +34,8 @@ service cloud.firestore {
     
     match /quizSubmissions/{submissionId} {
       allow create: if isSignedIn();
-      allow read: if isSignedIn() && (isOwner(submissionId) || isAdmin());
-      // Allow students to list their own submissions for the achievements page.
-      allow list: if isSignedIn() && request.query.where.get("userId") == request.auth.uid;
+      allow read, delete: if isSignedIn() && (isOwner(get(/databases/$(database)/documents/quizSubmissions/$(submissionId)).data.userId) || isAdmin());
+      allow list: if isSignedIn() && request.query.userId == request.auth.uid;
     }
   }
 }

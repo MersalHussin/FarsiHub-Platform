@@ -132,7 +132,7 @@ export default function OnboardingPage() {
              <RadioGroup
                 value={selectedAvatar ?? undefined}
                 onValueChange={setSelectedAvatar}
-                className="flex flex-col sm:flex-row gap-4 py-4"
+                className="flex flex-col sm:flex-row gap-4"
             >
                 <Label htmlFor="boy-avatar" className="flex-1 flex flex-col items-center gap-2 rounded-lg border-2 p-4 cursor-pointer transition-all hover:border-primary has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:checked]:text-primary">
                     <RadioGroupItem value={boyAvatarUrl} id="boy-avatar" className="sr-only" />

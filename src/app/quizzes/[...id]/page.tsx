@@ -204,7 +204,13 @@ export default function TakeQuizPage() {
     }
 
     if (!quiz || !lecture) {
-      return <p className="text-center">لم يتم العثور على الاختبار.</p>;
+      return <div className="text-center py-24">
+          <h2 className="text-2xl font-bold">لم يتم العثور على الاختبار</h2>
+          <p className="text-muted-foreground">قد تكون المحاضرة أو الاختبار الذي تبحث عنه قد حُذف.</p>
+          <Button variant="outline" onClick={() => router.push('/lectures')} className="mt-4">
+                العودة للمحاضرات
+            </Button>
+        </div>;
     }
     
     if (existingSubmission && !isFinished) {

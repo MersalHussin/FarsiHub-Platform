@@ -71,24 +71,15 @@ export default function StudentsPage() {
           description: `تم ${approved ? 'قبول' : 'تعليق'} الطالب بنجاح.`,
         });
       })
-      .catch((error) => {
+      .catch(async (error) => {
         const permissionError = new FirestorePermissionError({
             path: studentRef.path,
             operation: 'update',
             requestResourceData: updateData,
         });
         errorEmitter.emit('permission-error', permissionError);
-        toast({
-          variant: "destructive",
-          title: "فشل تحديث الحالة",
-          description: "ليست لديك الصلاحية لتحديث حالة هذا الطالب.",
-        });
-        // Revert UI change on error
-        setStudents((prevStudents) =>
-            prevStudents.map((student) =>
-            student.id === studentId ? { ...student, approved: !approved } : student
-            )
-        );
+        // UI is reverted optimistically on error by the listener now.
+        // No need for a toast here as the error listener will handle it.
     });
   };
 

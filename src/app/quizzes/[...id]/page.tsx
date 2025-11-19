@@ -54,10 +54,36 @@ export default function TakeQuizPage() {
   const [subjectId, lectureId] = idParams;
 
   const fetchLectureAndSubmission = useCallback(async () => {
-    if (typeof subjectId !== 'string' || typeof lectureId !== 'string' || !user) return;
+    if (typeof subjectId !== 'string' || typeof lectureId !== 'string' || !user) {
+        setLoading(false);
+        return;
+    };
     setLoading(true);
     
     try {
+        // Step 1: Fetch the lecture data first
+        const docRef = doc(db, "subjects", subjectId, "lectures", lectureId);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            const lectureData = { id: docSnap.id, ...docSnap.data() } as Lecture;
+            setLecture(lectureData);
+            if (lectureData.quiz) {
+                setQuiz(lectureData.quiz);
+            } else {
+                toast({ variant: "destructive", title: "الاختبار غير موجود لهذه المحاضرة" });
+                router.push(`/lectures/${subjectId}/${lectureId}`);
+                setLoading(false);
+                return;
+            }
+        } else {
+            toast({ variant: "destructive", title: "المحاضرة غير موجودة" });
+            router.push('/lectures');
+            setLoading(false);
+            return;
+        }
+
+        // Step 2: After successfully fetching the lecture, check for existing submission
         const submissionQuery = query(
             collection(db, "quizSubmissions"),
             where("userId", "==", user.uid),
@@ -70,22 +96,6 @@ export default function TakeQuizPage() {
             setExistingSubmission({ id: submissionDoc.id, score: submissionDoc.data().score });
         }
 
-        const docRef = doc(db, "subjects", subjectId, "lectures", lectureId);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-            const lectureData = { id: docSnap.id, ...docSnap.data() } as Lecture;
-            setLecture(lectureData);
-            if (lectureData.quiz) {
-                setQuiz(lectureData.quiz);
-            } else {
-                toast({ variant: "destructive", title: "الاختبار غير موجود لهذه المحاضرة" });
-                router.push(`/lectures/${subjectId}/${lectureId}`);
-            }
-        } else {
-            toast({ variant: "destructive", title: "المحاضرة غير موجودة" });
-            router.push('/lectures');
-        }
     } catch(error) {
         console.error("Error fetching data: ", error);
         toast({ variant: "destructive", title: "فشل تحميل البيانات" });
@@ -100,6 +110,7 @@ export default function TakeQuizPage() {
         setLoading(false);
     }
   }, [subjectId, lectureId, user, toast, router]);
+
 
   useEffect(() => {
     if (user) {
@@ -332,5 +343,3 @@ export default function TakeQuizPage() {
     </div>
   );
 }
-
-    

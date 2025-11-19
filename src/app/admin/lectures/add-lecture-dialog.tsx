@@ -113,7 +113,15 @@ export default function AddLectureDialog({ onLectureAdded, subject }: AddLecture
       };
 
       if (values.hasQuiz && values.quiz) {
-        lectureData.quiz = values.quiz;
+        // Ensure correctAnswer is not an empty string if options are filled.
+        const validatedQuiz = {
+            ...values.quiz,
+            questions: values.quiz.questions.map(q => ({
+                ...q,
+                options: q.options.filter(opt => opt.trim() !== ""), // remove empty options
+            })),
+        };
+        lectureData.quiz = validatedQuiz;
       }
 
       await setDoc(newLectureDocRef, lectureData);
@@ -343,5 +351,3 @@ export default function AddLectureDialog({ onLectureAdded, subject }: AddLecture
     </Dialog>
   );
 }
-
-    

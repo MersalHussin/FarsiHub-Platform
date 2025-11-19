@@ -15,8 +15,6 @@ import { Loader2, ArrowRight } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import Confetti from 'react-dom-confetti';
-import { errorEmitter } from "@/lib/error-emitter";
-import { FirestorePermissionError, type SecurityRuleContext } from "@/lib/errors";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -90,6 +88,15 @@ export default function TakeQuizPage() {
         if (!submissionSnapshot.empty) {
             const submissionDoc = submissionSnapshot.docs[0];
             setExistingSubmission({ id: submissionDoc.id, score: submissionDoc.data().score });
+            setIsFinished(true); // Mark as finished to show results
+            setScore(submissionDoc.data().score);
+        } else {
+            // Reset state if no submission is found
+            setExistingSubmission(null);
+            setIsFinished(false);
+            setCurrentQuestionIndex(0);
+            setAnswers({});
+            setScore(0);
         }
 
     } catch(error) {
@@ -162,12 +169,8 @@ export default function TakeQuizPage() {
             toast({ title: "تم تقديم الاختبار بنجاح!" });
         })
         .catch(async (error) => {
-            const permissionError = new FirestorePermissionError({
-                path: 'quizSubmissions',
-                operation: 'create',
-                requestResourceData: submissionData,
-            });
-            errorEmitter.emit('permission-error', permissionError);
+             console.error("Error creating submission: ", error);
+             toast({ variant: "destructive", title: "فشل حفظ نتيجتك." });
         });
   };
 
@@ -184,13 +187,10 @@ export default function TakeQuizPage() {
         setSelectedAnswer(null);
         setIsFinished(false);
         setScore(0);
+        setShowConfetti(false);
         toast({ title: "يمكنك الآن إعادة الاختبار." });
     } catch(e: any) {
-        const permissionError = new FirestorePermissionError({
-            path: `quizSubmissions/${existingSubmission.id}`,
-            operation: 'delete',
-        });
-        errorEmitter.emit('permission-error', permissionError);
+        console.error("Error deleting submission: ", e);
         toast({ variant: "destructive", title: "فشل حذف النتيجة السابقة." });
     }
   }
@@ -215,45 +215,6 @@ export default function TakeQuizPage() {
         </div>;
     }
     
-    if (existingSubmission && !isFinished) {
-         return (
-            <Card className="w-full max-w-2xl mx-auto text-center">
-                <CardHeader>
-                    <CardTitle>لقد أكملت هذا الاختبار بالفعل!</CardTitle>
-                    <CardDescription>هذه هي نتيجتك السابقة.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <p className="text-5xl font-bold">{Math.round(existingSubmission.score)}%</p>
-                </CardContent>
-                <CardFooter className="flex flex-col sm:flex-row justify-center gap-4">
-                     <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                           <Button variant="outline">إعادة الاختبار</Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>هل أنت متأكد؟</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    هل أنت متأكد أنك تريد إعادة الاختبار؟ سيتم حذف نتيجتك السابقة.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleRetakeQuiz}>
-                                    نعم، أعد الاختبار
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                    <Button onClick={() => router.push(`/lectures/${lecture.subjectId}/${lecture.id}`)}>
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                        العودة إلى المحاضرة
-                    </Button>
-                </CardFooter>
-            </Card>
-        )
-    }
-
     if(isFinished) {
         return (
             <Card className="w-full max-w-2xl mx-auto text-center">
@@ -272,7 +233,9 @@ export default function TakeQuizPage() {
                  }}/>
                 <CardHeader>
                     <CardTitle>لقد أكملت الاختبار!</CardTitle>
-                    <CardDescription>هذه هي نتيجتك.</CardDescription>
+                    <CardDescription>
+                        {existingSubmission ? "هذه هي نتيجتك السابقة." : "هذه هي نتيجتك."}
+                    </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <p className="text-5xl font-bold">{Math.round(score)}%</p>
@@ -280,7 +243,28 @@ export default function TakeQuizPage() {
                        أجبت بشكل صحيح على {Math.round(score/100 * quiz.questions.length)} من {quiz.questions.length} أسئلة.
                     </p>
                 </CardContent>
-                <CardFooter className="flex justify-center">
+                <CardFooter className="flex flex-col sm:flex-row justify-center gap-4">
+                    {existingSubmission && (
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                               <Button variant="outline">إعادة الاختبار</Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>هل أنت متأكد؟</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        سيتم حذف نتيجتك السابقة بشكل نهائي وستبدأ الاختبار من جديد.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleRetakeQuiz}>
+                                        نعم، أعد الاختبار
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    )}
                     <Button onClick={() => router.push(`/lectures/${lecture.subjectId}/${lecture.id}`)}>
                         <ArrowRight className="ml-2 h-4 w-4" />
                         العودة إلى المحاضرة

@@ -103,6 +103,14 @@ export default function EditLectureDialog({ onLectureUpdated, subject, lecture }
         pdfUrl: values.pdfUrl,
         quiz: values.hasQuiz && values.quiz ? values.quiz : deleteField(),
       };
+      
+      if (lectureData.quiz) {
+         lectureData.quiz.questions = lectureData.quiz.questions.map((q: any) => ({
+                ...q,
+                options: q.options.filter((opt: string) => opt.trim() !== ""), // remove empty options
+            }));
+      }
+
 
       await updateDoc(lectureDocRef, lectureData);
       
@@ -329,5 +337,3 @@ export default function EditLectureDialog({ onLectureUpdated, subject, lecture }
     </Dialog>
   );
 }
-
-    

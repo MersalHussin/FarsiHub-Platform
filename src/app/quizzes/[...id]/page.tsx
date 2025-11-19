@@ -64,19 +64,11 @@ export default function TakeQuizPage() {
             where("lectureId", "==", lectureId)
         );
         
-        getDocs(submissionQuery).then((submissionSnapshot) => {
-            if (!submissionSnapshot.empty) {
-                const submissionDoc = submissionSnapshot.docs[0];
-                setExistingSubmission({ id: submissionDoc.id, score: submissionDoc.data().score });
-            }
-        }).catch((error) => {
-            console.error("Error fetching submissions:", error);
-            const permissionError = new FirestorePermissionError({
-                path: 'quizSubmissions',
-                operation: 'list'
-            } satisfies SecurityRuleContext);
-            errorEmitter.emit('permission-error', permissionError);
-        });
+        const submissionSnapshot = await getDocs(submissionQuery);
+        if (!submissionSnapshot.empty) {
+            const submissionDoc = submissionSnapshot.docs[0];
+            setExistingSubmission({ id: submissionDoc.id, score: submissionDoc.data().score });
+        }
 
         const docRef = doc(db, "subjects", subjectId, "lectures", lectureId);
         const docSnap = await getDoc(docRef);
@@ -97,6 +89,13 @@ export default function TakeQuizPage() {
     } catch(error) {
         console.error("Error fetching data: ", error);
         toast({ variant: "destructive", title: "فشل تحميل البيانات" });
+        if (error instanceof Error && error.message.includes('permission-denied')) {
+             const permissionError = new FirestorePermissionError({
+                path: 'quizSubmissions',
+                operation: 'list'
+            } satisfies SecurityRuleContext);
+            errorEmitter.emit('permission-error', permissionError);
+        }
     } finally {
         setLoading(false);
     }
@@ -333,3 +332,5 @@ export default function TakeQuizPage() {
     </div>
   );
 }
+
+    

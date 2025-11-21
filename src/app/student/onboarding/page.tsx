@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { doc, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getFirebaseDb } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, BookHeart } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -59,6 +59,7 @@ export default function OnboardingPage() {
     }
     setIsSubmitting(true);
     try {
+      const db = getFirebaseDb();
       const userRef = doc(db, "users", user.uid);
       await updateDoc(userRef, { 
         year: selectedYear,

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { collection, getDocs, query, orderBy, where } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getFirebaseDb } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import type { Lecture, Subject, LectureYear, Semester } from "@/lib/types";
@@ -45,6 +45,7 @@ export default function LecturesPage() {
     }
     setLoading(true);
     try {
+      const db = getFirebaseDb();
       // Fetch Subjects for the user's year
       const subjectsQuery = query(
         collection(db, "subjects"),

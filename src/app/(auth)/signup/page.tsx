@@ -10,7 +10,7 @@ import {
   createUserWithEmailAndPassword,
 } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+import { getFirebaseAuth, getFirebaseDb } from "@/lib/firebase";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -65,6 +65,8 @@ export default function SignUpPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
+      const auth = getFirebaseAuth();
+      const db = getFirebaseDb();
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         values.email,

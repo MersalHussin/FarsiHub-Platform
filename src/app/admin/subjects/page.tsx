@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { collection, getDocs, query, orderBy, deleteDoc, doc, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getFirebaseDb } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import type { Subject, LectureYear, Semester } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,7 @@ export default function SubjectsPage() {
 
   const fetchSubjects = useCallback(() => {
     setLoading(true);
+    const db = getFirebaseDb();
     const subjectsCollection = collection(db, "subjects");
     const q = query(subjectsCollection, orderBy("createdAt", "desc"));
     
@@ -80,6 +81,7 @@ export default function SubjectsPage() {
   }, [fetchSubjects]);
 
   const handleDelete = async (subjectId: string) => {
+    const db = getFirebaseDb();
     const subjectDocRef = doc(db, "subjects", subjectId);
     // You might want to delete subcollections like lectures here as well
     deleteDoc(subjectDocRef)

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { collection, getDocs, query, orderBy, deleteDoc, doc, where, getDoc, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getFirebaseDb } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import type { Lecture, Subject } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,7 @@ export default function LecturesPage() {
     let lecturesUnsubscribe: (() => void) | null = null;
 
     try {
+      const db = getFirebaseDb();
       const subjectRef = doc(db, "subjects", subjectId);
       subjectUnsubscribe = onSnapshot(subjectRef, (subjectSnap) => {
         if(subjectSnap.exists()) {
@@ -107,6 +108,7 @@ export default function LecturesPage() {
   const handleDelete = async (lectureId: string) => {
     if (!subjectId) return;
     try {
+      const db = getFirebaseDb();
       const lectureDocRef = doc(db, "subjects", subjectId, "lectures", lectureId);
       await deleteDoc(lectureDocRef);
       toast({

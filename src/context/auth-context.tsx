@@ -3,7 +3,7 @@
 import { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { onAuthStateChanged, User as FirebaseUser, deleteUser, updateProfile } from 'firebase/auth';
 import { doc, getDoc, Timestamp, deleteDoc, updateDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { getFirebaseAuth, getFirebaseDb } from '@/lib/firebase';
 import type { AppUser } from '@/lib/types';
 import { useRouter, usePathname } from 'next/navigation';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
@@ -27,6 +27,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserData = useCallback(async (firebaseUser: FirebaseUser) => {
     try {
+      const db = getFirebaseDb();
       const userDocRef = doc(db, 'users', firebaseUser.uid);
       const userDoc = await getDoc(userDocRef);
 
@@ -45,6 +46,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         // User exists in Auth, but not in Firestore. This is an inconsistent state.
         // Log them out.
+        const auth = getFirebaseAuth();
         await auth.signOut();
         setUser(null);
         return null;
@@ -57,6 +59,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
+    const auth = getFirebaseAuth();
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
       if (firebaseUser) {
@@ -94,12 +97,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user, loading, pathname, router]);
 
   const logout = async () => {
+    const auth = getFirebaseAuth();
     await auth.signOut();
     // onAuthStateChanged will handle setting user to null
     // The useEffect above will handle redirection
   };
 
   const refreshUser = useCallback(async () => {
+    const auth = getFirebaseAuth();
     const currentUser = auth.currentUser;
     if (currentUser) {
         setLoading(true);
@@ -110,11 +115,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   },[fetchUserData]);
 
   const deleteAccount = async () => {
+    const auth = getFirebaseAuth();
     const currentUser = auth.currentUser;
     if (!currentUser) {
         throw new Error("No user is currently signed in.");
     }
     try {
+        const db = getFirebaseDb();
         const userDocRef = doc(db, 'users', currentUser.uid);
         await deleteDoc(userDocRef);
         await deleteUser(currentUser);
@@ -125,12 +132,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateProfilePicture = async (photoURL: string) => {
+    const auth = getFirebaseAuth();
     const currentUser = auth.currentUser;
     if (!currentUser) {
         throw new Error("No user is currently signed in.");
     }
     try {
         await updateProfile(currentUser, { photoURL });
+        const db = getFirebaseDb();
         const userDocRef = doc(db, 'users', currentUser.uid);
         await updateDoc(userDocRef, { photoURL });
         await refreshUser();

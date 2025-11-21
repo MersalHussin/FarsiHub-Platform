@@ -5,7 +5,7 @@ import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { setDoc, collection, serverTimestamp, doc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getFirebaseDb } from "@/lib/firebase";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -97,6 +97,7 @@ export default function AddLectureDialog({ onLectureAdded, subject }: AddLecture
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
+      const db = getFirebaseDb();
       const lecturesCollectionRef = collection(db, "subjects", subject.id, "lectures");
       const newLectureDocRef = doc(lecturesCollectionRef);
 

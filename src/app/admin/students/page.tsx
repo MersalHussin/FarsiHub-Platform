@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { collection, getDocs, doc, updateDoc, query, where, orderBy, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getFirebaseDb } from "@/lib/firebase";
 import {
   Table,
   TableHeader,
@@ -26,6 +26,7 @@ export default function StudentsPage() {
   const { toast } = useToast();
 
   useEffect(() => {
+    const db = getFirebaseDb();
     const q = query(collection(db, "users"), where("role", "==", "student"), orderBy("createdAt", "desc"));
     
     const unsubscribe = onSnapshot(q, 
@@ -64,6 +65,7 @@ export default function StudentsPage() {
   }, [toast]);
 
   const handleApprovalChange = (studentId: string, approved: boolean) => {
+    const db = getFirebaseDb();
     const studentRef = doc(db, "users", studentId);
     const updateData = { approved };
     updateDoc(studentRef, updateData)

@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { ReactNode } from 'react';
@@ -17,10 +18,11 @@ import {
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookHeart, Users, BookCopy, ClipboardCheck, LogOut, Loader2, Library } from 'lucide-react';
+import { Users, BookCopy, ClipboardCheck, LogOut, Loader2, Library, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import Image from 'next/image';
 
 
 const navItems = [
@@ -55,7 +57,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         <Sidebar side="right">
           <SidebarHeader>
             <Link href="/" className="flex items-center gap-2 font-bold text-xl text-sidebar-primary-foreground/80 hover:text-sidebar-primary-foreground">
-              <BookHeart className="h-7 w-7 text-primary" />
+              <Image src="https://i.suar.me/lpqVn/l" alt="Farsi Hub Logo" width={28} height={28} className="h-7 w-7" />
               <span className="text-foreground">فارسي هب</span>
             </Link>
           </SidebarHeader>
@@ -93,6 +95,14 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56 mb-2" align="end" forceMount>
+                <DropdownMenuLabel>حسابي</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                    <Link href="/admin/profile">
+                        <User className="mr-2 h-4 w-4" />
+                        الملف الشخصي
+                    </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={logout}>
                     <LogOut className="mr-2 h-4 w-4" />
                     تسجيل الخروج

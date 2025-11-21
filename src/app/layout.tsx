@@ -6,10 +6,6 @@ import { Toaster } from '@/components/ui/toaster';
 export const metadata: Metadata = {
   title: 'Farsi Hub | فارسي هب',
   description: 'منصة تعليمية لطلاب قسم اللغة الفارسية - جامعة القاهرة',
-  metadataBase: new URL(process.env.NODE_ENV === 'production' ? 'https://farsi-hub-app.vercel.app' : 'http://localhost:9002'),
-  alternates: {
-    canonical: '/',
-  },
   icons: {
     icon: 'https://i.suar.me/lpqVn/l',
     shortcut: 'https://i.suar.me/lpqVn/l',

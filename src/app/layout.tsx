@@ -9,6 +9,12 @@ export const metadata: Metadata = {
   icons: {
     icon: 'https://i.suar.me/lpqVn/l',
   },
+  // This will prevent Next.js from generating a default favicon.ico
+  // and force it to use the one specified above.
+  metadataBase: new URL(process.env.NODE_ENV === 'production' ? 'https://farsi-hub-app.vercel.app' : 'http://localhost:9002'),
+  alternates: {
+    canonical: '/',
+  }
 };
 
 export default function RootLayout({

@@ -110,7 +110,7 @@ export default function LoginPage() {
       forgotPasswordForm.reset();
     } catch (error: any) {
       console.error(error);
-      let errorMessage = "حدث خطأ ما. يرجى المحاولة مرة أخرى.";
+      let errorMessage = "حدث خطأ أثناء محاولة إرسال بريد إعادة التعيين. قد يكون بسبب إعدادات Firebase.";
       if (error.code === 'auth/user-not-found') {
           errorMessage = "هذا البريد الإلكتروني غير مسجل لدينا."
       }

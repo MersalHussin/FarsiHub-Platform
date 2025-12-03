@@ -1,7 +1,7 @@
 
 import type { Metadata } from 'next';
 import './globals.css';
-import { AppProviders } from '@/context/auth-context';
+import { AppProviders } from '@/context/app-providers';
 import { Toaster } from '@/components/ui/toaster';
 
 

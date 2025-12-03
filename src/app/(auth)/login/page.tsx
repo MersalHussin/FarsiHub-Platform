@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,6 +38,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { useRouter } from "next/navigation";
 
 const formSchema = z.object({
   email: z.string().email({ message: "البريد الإلكتروني غير صالح." }),
@@ -53,6 +55,16 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isResetLoading, setIsResetLoading] = useState(false);
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace('/dashboard');
+    }
+  }, [user, loading, router]);
+
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -122,6 +134,10 @@ export default function LoginPage() {
     }
   }
   
+  if (loading || user) {
+    return null; // Render nothing while loading or if user is already logged in (will be redirected)
+  }
+
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
@@ -222,4 +238,3 @@ export default function LoginPage() {
     </Card>
   );
 }
-

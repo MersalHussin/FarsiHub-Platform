@@ -1,15 +1,16 @@
 
 "use client";
 
-import { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { createContext, useState, useEffect, ReactNode, useCallback, useContext } from 'react';
 import { onAuthStateChanged, User as FirebaseUser, deleteUser, updateProfile } from 'firebase/auth';
 import { doc, getDoc, Timestamp, deleteDoc, updateDoc } from 'firebase/firestore';
 import { getFirebaseAuth, getFirebaseDb } from '@/lib/firebase';
 import type { AppUser } from '@/lib/types';
-import { useRouter, usePathname } from 'next/navigation';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { GlobalLoadingIndicator } from '@/components/GlobalLoadingIndicator';
-import { useAuth as useAuthHook } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth';
+
+// --- Auth Context Logic ---
 
 interface AuthContextType {
   user: AppUser | null;
@@ -22,38 +23,9 @@ interface AuthContextType {
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Export useAuth from here to avoid circular dependency issues with layout
-export const useAuth = () => {
-    const context = useAuthHook();
-    return context;
-};
-
-function AppContent({ children }: { children: React.ReactNode }) {
-  const { loading } = useAuth();
-  return (
-    <>
-      {loading && <GlobalLoadingIndicator />}
-      <FirebaseErrorListener />
-      {children}
-    </>
-  );
-}
-
-export function AppProviders({ children }: { children: React.ReactNode }) {
-    return (
-        <AuthProvider>
-            <AppContent>
-                {children}
-            </AppContent>
-        </AuthProvider>
-    )
-}
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
-  const pathname = usePathname();
 
   const fetchUserData = useCallback(async (firebaseUser: FirebaseUser) => {
     try {
@@ -97,38 +69,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+        setLoading(true);
         await fetchUserData(firebaseUser);
+        setLoading(false);
       } else {
         setUser(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => unsubscribe();
   }, [fetchUserData]);
   
-  useEffect(() => {
-    if (loading) return; 
-
-    const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/signup');
-    const protectedPaths = ['/dashboard', '/admin', '/student', '/lectures', '/assignments', '/quizzes'];
-    const isProtected = protectedPaths.some(path => pathname.startsWith(path));
-
-    if (user) {
-      if (isAuthPage) {
-         router.replace('/dashboard');
-      }
-    } else {
-      if (isProtected) {
-        router.replace('/login');
-      }
-    }
-
-  }, [user, loading, pathname, router]);
-
   const logout = async () => {
     const auth = getFirebaseAuth();
-    if (auth) await auth.signOut();
+    if (auth) {
+      await auth.signOut();
+      setUser(null);
+    }
   };
 
   const refreshUser = useCallback(async () => {
@@ -191,3 +149,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     </AuthContext.Provider>
   );
 };
+
+
+// --- App Content Logic ---
+
+function AppContent({ children }: { children: React.ReactNode }) {
+  const { loading } = useAuth();
+  return (
+    <>
+      {loading && <GlobalLoadingIndicator />}
+      <FirebaseErrorListener />
+      {children}
+    </>
+  );
+}
+
+export function AppProviders({ children }: { children: React.ReactNode }) {
+    return (
+        <AuthProvider>
+            <AppContent>
+                {children}
+            </AppContent>
+        </AuthProvider>
+    )
+}

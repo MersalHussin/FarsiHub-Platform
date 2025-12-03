@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -11,11 +12,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!loading && !user) {
-      router.push("/login");
+      router.replace("/login");
     }
   }, [user, loading, router]);
 
-  if (loading) {
+  if (loading || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-16 w-16 animate-spin text-primary" />
@@ -23,9 +24,5 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  if (user) {
-    return <>{children}</>;
-  }
-
-  return null;
+  return <>{children}</>;
 }

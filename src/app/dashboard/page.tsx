@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect } from 'react';
@@ -10,17 +11,12 @@ export default function DashboardPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (loading) {
-      return; // Wait until loading is false
-    }
-
-    if (!user) {
-      router.replace('/login');
-      return;
+    if (loading || !user) {
+      return; // Wait until loading is false and user is available
     }
 
     if (user.role === 'admin') {
-      router.replace('/admin/profile');
+      router.replace('/admin/subjects');
     } else if (user.role === 'student') {
       if (!user.year) {
         router.replace('/student/onboarding');

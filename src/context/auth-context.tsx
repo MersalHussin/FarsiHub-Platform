@@ -1,3 +1,4 @@
+
 "use client";
 
 import { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
@@ -7,6 +8,7 @@ import { getFirebaseAuth, getFirebaseDb } from '@/lib/firebase';
 import type { AppUser } from '@/lib/types';
 import { useRouter, usePathname } from 'next/navigation';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
+import { GlobalLoadingIndicator } from '@/components/GlobalLoadingIndicator';
 
 interface AuthContextType {
   user: AppUser | null;
@@ -160,6 +162,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AuthContext.Provider value={value}>
         <FirebaseErrorListener />
+        {loading && <GlobalLoadingIndicator />}
         {children}
     </AuthContext.Provider>
   );

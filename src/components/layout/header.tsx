@@ -4,8 +4,8 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, LayoutDashboard, User } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
+import { Menu, LayoutDashboard, User, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
@@ -18,7 +18,7 @@ import { usePathname } from 'next/navigation';
 
 
 export function Header() {
-  const { user, loading } = useAuth();
+  const { user, loading, logout } = useAuth();
   const pathname = usePathname();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
@@ -79,20 +79,18 @@ export function Header() {
     useEffect(() => {
         setIsClient(true);
     }, []);
-
+    
     if (!isClient || loading) {
-      return (
-        <div className="flex items-center gap-2">
-            <Skeleton className="h-10 w-24" />
-            <Skeleton className="h-10 w-10 rounded-full" />
-        </div>
-      );
+        return (
+            <div className="flex items-center gap-2">
+                <Skeleton className="h-10 w-24" />
+                <Skeleton className="h-10 w-10 rounded-full" />
+            </div>
+        );
     }
 
     if (user) {
       const profileUrl = user.role === 'admin' ? '/admin/profile' : '/student/profile';
-      const profileLabel = user.role === 'admin' ? 'لوحة التحكم' : 'الملف الشخصي';
-      const profileIcon = user.role === 'admin' ? <LayoutDashboard className="mr-2 h-4 w-4" /> : <User className="mr-2 h-4 w-4" />;
       
       return (
         <DropdownMenu>
@@ -116,12 +114,12 @@ export function Header() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                     <Link href={profileUrl}>
-                        {profileIcon}
-                        <span>{profileLabel}</span>
+                        <User className="mr-2 h-4 w-4" />
+                        <span>الملف الشخصي</span>
                     </Link>
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout}>
+                    <LogOut className="mr-2 h-4 w-4" />
                     تسجيل الخروج
                 </DropdownMenuItem>
             </DropdownMenuContent>
@@ -155,28 +153,42 @@ export function Header() {
                       </Button>
                       </SheetTrigger>
                       <SheetContent side="right">
-                      <div className="flex flex-col gap-4 mt-8">
-                          <NavLinks isMobile={true}/>
-                          <Separator/>
-                          {/* Mobile Auth Buttons */}
-                          {loading || !user ? (
+                        <div className="p-4">
+                            <Logo />
+                        </div>
+                        <Separator />
+                        <div className="flex flex-col gap-4 mt-4 p-4">
+                            <NavLinks isMobile={true}/>
+                            <Separator/>
+                            {/* Mobile Auth Buttons */}
                             <div className="flex flex-col gap-2">
-                              <Button variant="ghost" asChild onClick={() => setIsSheetOpen(false)}><Link href="/login">تسجيل الدخول</Link></Button>
-                              <Button asChild onClick={() => setIsSheetOpen(false)}><Link href="/signup">سجل الآن</Link></Button>
+                                { !user ? (
+                                    <>
+                                        <SheetClose asChild>
+                                            <Button variant="ghost" asChild><Link href="/login">تسجيل الدخول</Link></Button>
+                                        </SheetClose>
+                                        <SheetClose asChild>
+                                            <Button asChild><Link href="/signup">سجل الآن</Link></Button>
+                                        </SheetClose>
+                                    </>
+                                ) : (
+                                    <>
+                                        <SheetClose asChild>
+                                            <Button variant="outline" asChild>
+                                                <Link href={user.role === 'admin' ? '/admin/profile' : '/student/profile'}>الملف الشخصي</Link>
+                                            </Button>
+                                        </SheetClose>
+                                        <Button onClick={() => { logout(); setIsSheetOpen(false); }}>تسجيل الخروج</Button>
+                                    </>
+                                )}
                             </div>
-                          ) : (
-                            <div className="flex flex-col gap-2">
-                                  <Button variant="outline" asChild onClick={() => setIsSheetOpen(false)}>
-                                      <Link href={user.role === 'admin' ? '/admin/profile' : '/student/profile'}>الملف الشخصي</Link>
-                                  </Button>
-                                <Button onClick={() => { logout(); setIsSheetOpen(false); }}>تسجيل الخروج</Button>
-                            </div>
-                          )}
-                      </div>
+                        </div>
                       </SheetContent>
                   </Sheet>
               </div>
-              <Logo />
+              <div className='hidden md:flex'>
+                <Logo />
+              </div>
             </div>
             
             {/* Desktop Navigation */}

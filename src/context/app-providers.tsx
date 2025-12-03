@@ -1,4 +1,3 @@
-
 "use client";
 
 import { createContext, useState, useEffect, ReactNode, useCallback, useContext } from 'react';
@@ -155,34 +154,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 function GlobalLoadingWrapper({ children }: { children: React.ReactNode }) {
     const { loading } = useAuth();
-    const [showLoading, setShowLoading] = useState(true);
+    const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
-        // This effect runs only on the client.
-        // It ensures the server never renders the loading indicator,
-        // and the client only shows it if the auth state is actually loading.
-        if (!loading) {
-            setShowLoading(false);
-        } else {
-            setShowLoading(true);
-        }
-    }, [loading]);
+        setIsMounted(true);
+    }, []);
 
-    // On the server and during initial client render, `showLoading` is false,
-    // preventing hydration mismatch. The `useEffect` above will then correctly
-    // set the loading state on the client after hydration.
-    // We check `loading` here as well to immediately remove the indicator
-    // when the loading state changes, without waiting for another render cycle.
+    if (!isMounted || !loading) {
+        return <>{children}</>;
+    }
+
     return (
         <>
-            {showLoading && loading && <GlobalLoadingIndicator />}
+            <GlobalLoadingIndicator />
             {children}
         </>
     );
 }
 
 
-export function AppProviders({ children }: { children: React.ReactNode }) {
+export function AppProviders({ children }: { children: React.Node }) {
     return (
         <AuthProvider>
             <FirebaseErrorListener />

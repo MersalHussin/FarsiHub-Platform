@@ -5,29 +5,21 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, LayoutDashboard, AlertTriangle, User } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { usePathname } from 'next/navigation';
+import { Menu, LayoutDashboard, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { Skeleton } from '../ui/skeleton';
+import { PendingApprovalBanner } from './pending-approval-banner';
+import { Separator } from '@/components/ui/separator';
 
-function PendingApprovalBanner() {
-    return (
-        <div className="bg-yellow-500 border-b border-yellow-600 text-yellow-950 p-2 text-center text-sm flex items-center justify-center gap-2">
-            <AlertTriangle className="h-4 w-4" />
-            <span>حسابك قيد المراجعة. قد تكون بعض الميزات محدودة حتى تتم الموافقة على حسابك.</span>
-        </div>
-    );
-}
 
 export function Header() {
   const { user, loading, logout } = useAuth();
-  const isMobile = useIsMobile();
   const pathname = usePathname();
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   const getInitials = (name: string) => name?.split(' ').map(n => n[0]).join('').toUpperCase() || '';
 
@@ -43,8 +35,8 @@ export function Header() {
         <span>فارسي هب</span>
     </Link>
   );
-
-  const NavLinks = ({ isMobile = false }) => (
+  
+  const NavLinks = ({ isMobile = false }: { isMobile?: boolean }) => (
     <nav className={cn("flex items-center gap-2", isMobile ? "flex-col" : "flex-row")}>
       {navItems.map((item) => (
         <Button
@@ -56,6 +48,7 @@ export function Header() {
             { 'text-primary font-bold': pathname === item.href },
             isMobile && 'w-full justify-start text-base'
           )}
+          onClick={() => isMobile && setIsSheetOpen(false)}
         >
           <Link href={item.href}>{item.label}</Link>
         </Button>
@@ -68,6 +61,7 @@ export function Header() {
             'text-foreground/80 hover:text-foreground hover:no-underline font-semibold',
              isMobile && 'w-full justify-start text-base'
           )}
+           onClick={() => isMobile && setIsSheetOpen(false)}
         >
           <Link href="/admin">
             <LayoutDashboard className="ml-2 h-4 w-4" />
@@ -78,7 +72,7 @@ export function Header() {
     </nav>
   );
 
-  const AuthArea = ({ isMobile = false }) => {
+  const AuthArea = () => {
     const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {
@@ -86,24 +80,20 @@ export function Header() {
     }, []);
 
     if (!isClient || loading) {
-      return isMobile ? <div className='h-24 w-full' /> : <div className='h-10 w-10' />; 
+      return (
+        <div className="flex items-center gap-2">
+            <Skeleton className="h-10 w-24" />
+            <Skeleton className="h-10 w-10 rounded-full" />
+        </div>
+      );
     }
 
     if (user) {
-      const profileUrl = user.role === 'admin' ? '/admin' : '/student/profile';
+      const profileUrl = user.role === 'admin' ? '/admin/profile' : '/student/profile';
       const profileLabel = user.role === 'admin' ? 'لوحة التحكم' : 'الملف الشخصي';
       const profileIcon = user.role === 'admin' ? <LayoutDashboard className="mr-2 h-4 w-4" /> : <User className="mr-2 h-4 w-4" />;
       
-      return isMobile ? (
-        <div className="flex flex-col w-full mt-4 pt-4 border-t">
-           <Button variant='outline' asChild className='w-full'>
-            <Link href={profileUrl}>{profileLabel}</Link>
-          </Button>
-          <Button onClick={logout} variant="default" className='w-full mt-2'>
-            تسجيل الخروج
-          </Button>
-        </div>
-      ) : (
+      return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
@@ -139,58 +129,73 @@ export function Header() {
     }
 
     return (
-      <div className={cn("flex items-center gap-2", isMobile && 'flex-col w-full mt-4 pt-4 border-t')}>
-        <Button variant="ghost" asChild  className={cn(isMobile && 'w-full')}>
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" asChild>
           <Link href="/login">تسجيل الدخول</Link>
         </Button>
-        <Button asChild  className={cn(isMobile && 'w-full')}>
+        <Button asChild>
           <Link href="/signup">سجل الآن</Link>
         </Button>
       </div>
     );
   }
 
-
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-card shadow-sm">
         {user && user.role === 'student' && !user.approved && <PendingApprovalBanner />}
-        <div className="container mx-auto flex h-16 items-center px-4">
-            {isMobile ? (
-                <>
-                    <Logo />
-                    <div className="mr-auto">
-                        <Sheet>
-                            <SheetTrigger asChild>
-                            <Button variant="outline" size="icon">
-                                <Menu className="h-6 w-6" />
-                                <span className="sr-only">Open menu</span>
-                            </Button>
-                            </SheetTrigger>
-                            <SheetContent side="right">
-                            <nav className="flex flex-col gap-2 mt-8">
-                                <NavLinks isMobile={true}/>
-                            </nav>
-                            <AuthArea isMobile={true}/>
-                            </SheetContent>
-                        </Sheet>
-                    </div>
-                </>
-            ) : (
-            <div className='flex items-center justify-between w-full'>
-                <div className='flex-1'>
-                    <Logo />
-                </div>
-
-                <div className='flex-1 flex justify-center'>
-                    <NavLinks />
-                </div>
-
-                <div className='flex-1 flex justify-end'>
-                    <AuthArea />
-                </div>
+        <div className="container mx-auto flex h-16 items-center justify-between px-4">
+            <div className="flex items-center gap-4">
+              <div className="md:hidden">
+                  <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+                      <SheetTrigger asChild>
+                      <Button variant="outline" size="icon">
+                          <Menu className="h-6 w-6" />
+                          <span className="sr-only">Open menu</span>
+                      </Button>
+                      </SheetTrigger>
+                      <SheetContent side="right">
+                      <div className="flex flex-col gap-4 mt-8">
+                          <NavLinks isMobile={true}/>
+                          <Separator/>
+                          {/* Mobile Auth Buttons */}
+                          {loading || !user ? (
+                            <div className="flex flex-col gap-2">
+                              <Button variant="ghost" asChild onClick={() => setIsSheetOpen(false)}><Link href="/login">تسجيل الدخول</Link></Button>
+                              <Button asChild onClick={() => setIsSheetOpen(false)}><Link href="/signup">سجل الآن</Link></Button>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col gap-2">
+                                  <Button variant="outline" asChild onClick={() => setIsSheetOpen(false)}>
+                                      <Link href={user.role === 'admin' ? '/admin/profile' : '/student/profile'}>الملف الشخصي</Link>
+                                  </Button>
+                                <Button onClick={() => { logout(); setIsSheetOpen(false); }}>تسجيل الخروج</Button>
+                            </div>
+                          )}
+                      </div>
+                      </SheetContent>
+                  </Sheet>
+              </div>
+              <Logo />
             </div>
-            )}
+            
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex">
+                <NavLinks />
+            </div>
+
+            <div className="hidden md:flex items-center">
+                <AuthArea />
+            </div>
         </div>
     </header>
   );
 }
+
+// This is a workaround for the fact that usePathname is not available in server components
+const usePathname = () => {
+    const [path, setPath] = useState('');
+    useEffect(() => {
+        setPath(window.location.pathname);
+    }, []);
+    return path;
+};

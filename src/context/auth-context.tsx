@@ -8,6 +8,7 @@ import { getFirebaseAuth, getFirebaseDb } from '@/lib/firebase';
 import type { AppUser } from '@/lib/types';
 import { useRouter, usePathname } from 'next/navigation';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
+import { useAuth as useAuthHook } from '@/hooks/use-auth';
 import { GlobalLoadingIndicator } from '@/components/GlobalLoadingIndicator';
 
 interface AuthContextType {
@@ -20,6 +21,32 @@ interface AuthContextType {
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Export useAuth from here to avoid circular dependency issues with layout
+export const useAuth = () => {
+    const context = useAuthHook();
+    return context;
+};
+
+function AppContent({ children }: { children: React.ReactNode }) {
+  const { loading } = useAuth();
+  return (
+    <>
+      {loading && <GlobalLoadingIndicator />}
+      {children}
+    </>
+  );
+}
+
+export function AppProviders({ children }: { children: React.ReactNode }) {
+    return (
+        <AuthProvider>
+            <AppContent>
+                {children}
+            </AppContent>
+        </AuthProvider>
+    )
+}
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AppUser | null>(null);
@@ -162,7 +189,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AuthContext.Provider value={value}>
         <FirebaseErrorListener />
-        {loading && <GlobalLoadingIndicator />}
         {children}
     </AuthContext.Provider>
   );

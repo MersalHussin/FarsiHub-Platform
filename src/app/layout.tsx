@@ -1,11 +1,14 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
-import { AuthProvider } from '@/context/auth-context';
+import { AppProviders } from '@/context/auth-context';
 import { Toaster } from '@/components/ui/toaster';
+
 
 export const metadata: Metadata = {
   title: 'Farsi Hub | فارسي هب',
   description: 'منصة تعليمية لطلاب قسم اللغة الفارسية - جامعة القاهرة',
+  metadataBase: new URL('https://farsi-hub.com'), // Replace with your actual domain
   openGraph: {
     title: 'Farsi Hub | فارسي هب',
     description: 'منصة تعليمية لطلاب قسم اللغة الفارسية - جامعة القاهرة',
@@ -19,11 +22,6 @@ export const metadata: Metadata = {
     ],
     locale: 'ar_EG',
     type: 'website',
-  },
-  icons: {
-    icon: 'https://i.suar.me/lpqVn/l',
-    shortcut: 'https://i.suar.me/lpqVn/l',
-    apple: 'https://i.suar.me/lpqVn/l',
   },
 };
 
@@ -40,10 +38,10 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Zain:wght@400;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
-        <AuthProvider>
+        <AppProviders>
           {children}
           <Toaster />
-        </AuthProvider>
+        </AppProviders>
       </body>
     </html>
   );

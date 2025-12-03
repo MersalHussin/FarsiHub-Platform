@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -11,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import Image from 'next/image';
+import { useState, useEffect } from 'react';
 
 function PendingApprovalBanner() {
     return (
@@ -76,8 +78,14 @@ export function Header() {
   );
 
   const AuthArea = ({ isMobile = false }) => {
-    if (loading) {
-      return <div className='h-10 w-24' />; // Placeholder for loading state
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+
+    if (loading || !isClient) {
+      return <div className='h-10 w-24' />; // Placeholder for loading state and initial server render
     }
 
     if (user) {
@@ -129,6 +137,7 @@ export function Header() {
       );
     }
 
+    // Render for unauthenticated user, only on client
     return (
       <div className={cn("flex items-center gap-2", isMobile && 'flex-col w-full mt-4 pt-4 border-t')}>
         <Button variant="ghost" asChild  className={cn(isMobile && 'w-full')}>

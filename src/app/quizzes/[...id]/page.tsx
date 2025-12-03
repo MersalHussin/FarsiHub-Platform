@@ -7,7 +7,7 @@ import { getFirebaseDb } from "@/lib/firebase";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import type { Lecture, Quiz, QuizSubmission } from "@/lib/types";
+import type { Lecture, Quiz, QuizSubmission, Question } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -18,7 +18,8 @@ import { Footer } from "@/components/layout/footer";
 import Confetti from 'react-dom-confetti';
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Info } from "lucide-react";
+import { Info, CheckCircle, XCircle } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
 export default function TakeQuizPage() {
   const [lecture, setLecture] = useState<Lecture | null>(null);
@@ -185,7 +186,7 @@ export default function TakeQuizPage() {
     
     if(isFinished) {
         return (
-            <Card className="w-full max-w-2xl mx-auto text-center">
+            <Card className="w-full max-w-4xl mx-auto">
                  <Confetti active={ showConfetti } config={{
                     angle: 90,
                     spread: 360,
@@ -199,17 +200,67 @@ export default function TakeQuizPage() {
                     perspective: "500px",
                     colors: ["#a864fd", "#29cdff", "#78ff44", "#ff718d", "#fdff6a"]
                  }}/>
-                <CardHeader>
-                    <CardTitle>نتيجة الاختبار</CardTitle>
+                <CardHeader className="text-center">
+                    <CardTitle>نتيجة الاختبار: {quiz.title}</CardTitle>
                     <CardDescription>
                        لقد أكملت الاختبار بنجاح.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                    <p className="text-5xl font-bold">{Math.round(score)}%</p>
-                    <p className="text-muted-foreground">
-                       أجبت بشكل صحيح على {Math.round(score/100 * quiz.questions.length)} من {quiz.questions.length} أسئلة.
-                    </p>
+                <CardContent className="space-y-6">
+                    <div className="text-center">
+                        <p className="text-6xl font-bold">{Math.round(score)}%</p>
+                        <p className="text-muted-foreground">
+                        أجبت بشكل صحيح على {Math.round(score/100 * quiz.questions.length)} من {quiz.questions.length} أسئلة.
+                        </p>
+                    </div>
+
+                    <Separator />
+
+                    <div>
+                        <h3 className="text-lg font-semibold mb-4 text-center">مراجعة الإجابات</h3>
+                        <div className="space-y-4">
+                           {quiz.questions.map((q, index) => {
+                               const studentAnswer = answers[index];
+                               const isMcqCorrect = q.type === 'mcq' && studentAnswer === q.correctAnswer;
+                               
+                               return (
+                                   <div key={index} className="border p-4 rounded-md">
+                                       <p className="font-semibold mb-2">{index + 1}. {q.text}</p>
+                                       {q.type === 'mcq' ? (
+                                           <div className="space-y-2">
+                                               {q.options?.map((opt, i) => (
+                                                   <div key={i} className={`flex items-center gap-2 p-2 rounded-md ${
+                                                       opt === q.correctAnswer ? 'bg-green-100 text-green-800' : 
+                                                       opt === studentAnswer ? 'bg-red-100 text-red-800' : ''
+                                                   }`}>
+                                                        {opt === studentAnswer ? (
+                                                            isMcqCorrect ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />
+                                                        ) : (
+                                                            <div className="w-4 h-4" /> // placeholder
+                                                        )}
+                                                       <span>{opt}</span>
+                                                   </div>
+                                               ))}
+                                           </div>
+                                       ) : ( // Essay
+                                           <div className="space-y-3">
+                                               <div>
+                                                    <Label className="text-muted-foreground">إجابتك</Label>
+                                                    <p className="p-2 bg-muted rounded-md whitespace-pre-wrap">{studentAnswer}</p>
+                                               </div>
+                                                {q.modelAnswer && (
+                                                   <div>
+                                                       <Label className="text-green-700">الإجابة النموذجية</Label>
+                                                       <p className="p-2 bg-green-100 text-green-900 rounded-md whitespace-pre-wrap">{q.modelAnswer}</p>
+                                                   </div>
+                                                )}
+                                           </div>
+                                       )}
+                                   </div>
+                               )
+                           })}
+                        </div>
+                    </div>
                 </CardContent>
                 <CardFooter className="flex flex-col sm:flex-row justify-center gap-4">
                     <Button onClick={() => router.push(`/lectures/${lecture.subjectId}/${lecture.id}`)}>

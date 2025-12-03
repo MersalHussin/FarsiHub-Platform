@@ -51,6 +51,7 @@ const questionSchema = z.object({
   type: z.enum(['mcq', 'essay'], { required_error: "الرجاء تحديد نوع السؤال."}),
   options: z.array(z.string()).optional(),
   correctAnswer: z.string().optional(),
+  modelAnswer: z.string().optional(),
 }).refine(data => {
     if (data.type === 'mcq') {
         return Array.isArray(data.options) && data.options.filter(opt => opt.trim() !== "").length >= 2 && data.correctAnswer;
@@ -144,8 +145,9 @@ export default function AddLectureDialog({ onLectureAdded, subject }: AddLecture
             ...values.quiz,
             questions: values.quiz.questions.map(q => {
                 if (q.type === 'mcq') {
+                    const { modelAnswer, ...mcqQuestion } = q;
                     return {
-                        ...q,
+                        ...mcqQuestion,
                         options: q.options?.filter(opt => opt.trim() !== ""),
                     };
                 }
@@ -399,6 +401,25 @@ export default function AddLectureDialog({ onLectureAdded, subject }: AddLecture
                                             )}
                                             />
                                         )}
+
+                                        {questions?.[index]?.type === 'essay' && (
+                                            <FormField
+                                            control={form.control}
+                                            name={`quiz.questions.${index}.modelAnswer`}
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>الإجابة النموذجية (اختياري)</FormLabel>
+                                                    <FormControl>
+                                                        <Textarea rows={4} {...field} placeholder="أدخل الإجابة النموذجية للسؤال المقالي هنا..."/>
+                                                    </FormControl>
+                                                    <FormDescription>
+                                                        ستظهر هذه الإجابة للطالب بعد انتهائه من الاختبار للمقارنة.
+                                                    </FormDescription>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                            />
+                                        )}
                                     </div>
                                     ))}
                                 </div>
@@ -407,7 +428,7 @@ export default function AddLectureDialog({ onLectureAdded, subject }: AddLecture
                                     variant="outline"
                                     size="sm"
                                     className="mt-4"
-                                    onClick={() => append({ text: "", type: "mcq", options: ["", "", "", ""], correctAnswer: "" })}
+                                    onClick={() => append({ text: "", type: "mcq", options: ["", "", "", ""], correctAnswer: "", modelAnswer: "" })}
                                 >
                                     <PlusCircle className="ml-2 h-4 w-4" />
                                     إضافة سؤال

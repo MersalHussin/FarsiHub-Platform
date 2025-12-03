@@ -18,6 +18,7 @@ export type Question = {
   type: 'mcq' | 'essay';
   options?: string[];
   correctAnswer?: string;
+  modelAnswer?: string; // For essay questions
 };
 
 export type Quiz = {

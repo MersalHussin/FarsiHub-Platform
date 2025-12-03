@@ -71,7 +71,8 @@
             "text": { "type": "string" },
             "type": { "type": "string", "enum": ["mcq", "essay"] },
             "options": { "type": "array", "items": { "type": "string" } },
-            "correctAnswer": { "type": "string" }
+            "correctAnswer": { "type": "string" },
+            "modelAnswer": { "type": "string" }
         },
         "required": ["text", "type"]
     },

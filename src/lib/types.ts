@@ -80,3 +80,20 @@ export interface Achievement {
     type: 'quiz' | 'lecture';
     icon: React.ReactNode;
 }
+
+export interface QnA {
+    id: string;
+    question: string;
+    answer: string | null;
+    answered: boolean;
+    lectureId: string;
+    lectureTitle: string;
+    subjectId: string;
+    subjectName: string;
+    userId: string;
+    userName: string;
+    userEmail: string;
+    userPhotoURL: string | null;
+    createdAt: Timestamp;
+    answeredAt: Timestamp | null;
+}
